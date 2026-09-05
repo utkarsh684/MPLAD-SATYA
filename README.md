@@ -602,6 +602,6 @@ No judge can reject because rejecting = rejecting Digital India, IndiaAI, CAG, V
 
 **Made with ❤️ for SIH 2026 | MoSPI | Viksit Bharat @2047**
 
-**Live Demo:** https://mplad-satya.vercel.app | **Video:** [YouTube Golden Path] | **PPT:** [SIH Template 6 Slides]
+**Live Demo:** https://mplad-satya.vercel.app | **Video:** [YouTube Golden Path] | **PPT:** [PPT](https://canva.link/lyj716a75fb6f52)
 
 **GitHub:** github.com/utkarsh684/MPLAD-SATYA
