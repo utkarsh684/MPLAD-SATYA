@@ -1,0 +1,48 @@
+version: "expert-prior-v1"
+
+# HONESTY NOTE, served verbatim by GET /api/v1/admin/rules:
+#
+# These caps are an EXPERT PRIOR, not learned parameters. No labelled national
+# MPLADS fraud dataset exists, so nothing here was fitted. They are derived from
+# the relative frequency of finding types in CAG's MPLADS performance audits and
+# are intended to be tuned per district once real outcomes accumulate.
+#
+# Scoring is ADDITIVE, not a weighted average: each reason contributes points,
+# category totals are capped, and the total is capped at 100. This is why the
+# reasons on screen sum exactly to the score shown in the gauge - explainability
+# is arithmetic here, not a post-hoc attribution method.
+
+category_caps:
+  rule: 40           # statutory violations: admissibility, tender, UC, ceilings
+  anomaly: 25        # cost vs CPWD benchmark
+  fraud: 35          # geo-duplication, photo reuse, GPS manipulation
+  field: 20          # physical measurement mismatch
+  inefficiency: 10   # delay, stalled progress
+
+total_cap: 100
+
+bands:
+  green:  {min: 0,  max: 30,  action: auto_approve,      label: "LOW RISK"}
+  yellow: {min: 31, max: 70,  action: manual_review,     label: "REVIEW REQUIRED"}
+  red:    {min: 71, max: 100, action: hold_field_verify, label: "HIGH RISK"}
+
+action_labels:
+  auto_approve:      "ELIGIBLE FOR RELEASE"
+  manual_review:     "SEND FOR REVIEW"
+  hold_field_verify: "HOLD RELEASE FOR FIELD REVIEW"
+
+# Rendered on every risk screen. Server-owned so a client build cannot drop it.
+disclaimer: "AI recommendation - final decision by authorised officer."
+
+# Satellite calibration. See app/satellite.py. An inconclusive satellite
+# observation contributes ZERO points and can never raise a score: an unusable
+# sensor must not manufacture suspicion.
+satellite:
+  # A feature is considered reliably mappable only at >= 3x3 pixels (the
+  # standard minimum-mapping-unit convention in remote sensing).
+  min_mapping_unit_px: 3.0
+  # Logistic slope for reporting confidence in an INCONCLUSIVE verdict.
+  # Calibrated so a 3 m wide road at 2.5 m/px imagery reports 68% - the number
+  # on the approved verification screen. This is a stated calibration knob, not
+  # a fitted parameter.
+  inconclusive_confidence_slope: 1.26
