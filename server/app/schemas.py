@@ -302,3 +302,63 @@ class AuditVerifyOut(BaseModel):
     head_hash: str | None = None
     broken_at_seq: int | None = None
     problem: str | None = None
+
+
+# ---------------------------------------------------------------- evidence
+class EvidenceOut(BaseModel):
+    id: uuid.UUID
+    work_id: uuid.UUID
+    source: str
+    kind: str
+    storage_url: str
+    sha256: str
+    mime: str | None
+    bytes_len: int | None
+    width: int | None
+    height: int | None
+    captured_at: datetime | None
+    gps_trust: int | None
+    gps_flags: list[str] = Field(default_factory=list)
+    faces_blurred: int
+    phash_hex: str | None
+    client_uuid: uuid.UUID | None
+    created_at: datetime
+
+
+# ---------------------------------------------------------------- esakshi
+class EsakshiRecordOut(BaseModel):
+    esakshi_ref: str | None
+    work_code: str
+    title: str
+    category: str
+    sanctioned_amount_paise: int
+    sanction_date: str | None
+    status: str
+    physical_progress_pct: int
+    implementing_agency: str | None
+    total_released_paise: int
+    total_pending_paise: int
+    installments_count: int
+    source: str = "esakshi"
+    found: bool
+
+
+class EsakshiVerifyOut(BaseModel):
+    matches: bool
+    amount_match: bool
+    status_match: bool
+    agency_match: bool
+    discrepancies: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------- satellite
+class SatelliteResultOut(BaseModel):
+    status: str
+    confidence: float
+    method: str
+    resolution_m: float
+    min_detectable_m: float
+    target_dimension_m: float
+    detectability_ratio: float
+    reason: str
+    ndbi_delta: float | None = None

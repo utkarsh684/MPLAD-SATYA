@@ -20,16 +20,17 @@ from app.models import (
     CitizenReport,
     Evidence,
     FieldVerification,
+    FundRelease,
     SatelliteObservation,
     Work,
 )
 from app.services import phash as phash_svc
+from app.services.anomaly import cost_zscore, iforest_flag
 
-# Scheme constants. Kept here (not in rules.json) because they are facts about
-# the scheme, not scoring policy.
+# Scheme constants.
 TENDER_THRESHOLD_PAISE = 25_00_000 * 100      # Rs 25 lakh
 WORK_CEILING_PAISE = 1_00_00_000 * 100        # Rs 1 crore per work
-PROHIBITED_CATEGORIES: set[str] = set()       # populated from annex_ii.yaml
+PROHIBITED_CATEGORIES: set[str] = set()       # populated from annex_ii.yaml if it existed
 GEO_DUPLICATE_RADIUS_M = 10.0
 SIMILAR_WORK_RADIUS_M = 50.0
 
@@ -54,7 +55,6 @@ def _benchmark(db: Session, work: Work) -> BenchmarkRate | None:
 
 
 def _nearest_similar_work(db: Session, work: Work) -> tuple[float | None, str | None]:
-    """Closest same-category work. PostGIS ST_DWithin on geography = metres."""
     row = db.execute(
         text(
             """
@@ -80,7 +80,6 @@ def _nearest_similar_work(db: Session, work: Work) -> tuple[float | None, str | 
 
 
 def _photo_reuse(db: Session, work: Work) -> tuple[float | None, str | None]:
-    """Best perceptual-hash match against evidence on any OTHER work."""
     ours = db.execute(
         select(Evidence)
         .where(Evidence.work_id == work.id, Evidence.phash.isnot(None))
@@ -102,6 +101,56 @@ def _photo_reuse(db: Session, work: Work) -> tuple[float | None, str | None]:
                 other = db.get(Work, r.work_id)
                 best_code = other.work_code if other else None
     return best_similarity, best_code
+
+
+def _photo_cross_agency(db: Session, work: Work) -> bool:
+    """True if any evidence photo is near-duplicate of a photo from a different agency."""
+    ours = db.execute(
+        select(Evidence)
+        .where(Evidence.work_id == work.id, Evidence.phash.isnot(None))
+    ).scalars().all()
+
+    for ev in ours:
+        value = phash_svc.PhashValue(phash_svc.to_unsigned(ev.phash))
+        rows = db.execute(
+            text(phash_svc.NEAR_DUPLICATE_SQL),
+            phash_svc.near_duplicate_params(value, work.id),
+        ).all()
+        for r in rows:
+            other_work = db.get(Work, r.work_id)
+            if other_work and other_work.implementing_agency != work.implementing_agency:
+                return True
+    return False
+
+
+def _max_photo_offset(db: Session, work: Work) -> float | None:
+    """Max distance between any evidence GPS and the work location, in metres."""
+    if work.location is None:
+        return None
+    row = db.execute(
+        text(
+            """
+            SELECT MAX(ST_Distance(e.gps, :loc)) AS max_offset_m
+            FROM evidence e
+            WHERE e.work_id = :work_id
+              AND e.gps IS NOT NULL
+              AND e.deleted_at IS NULL
+            """
+        ),
+        {"loc": work.location, "work_id": work.id},
+    ).first()
+    return round(float(row.max_offset_m), 1) if row and row.max_offset_m else None
+
+
+def _utilisation(db: Session, work: Work) -> float | None:
+    """Ratio of amount released to amount sanctioned, as a percentage."""
+    released = db.execute(
+        select(func.coalesce(func.sum(FundRelease.claimed_amount_paise), 0))
+        .where(FundRelease.work_id == work.id, FundRelease.status == "approved")
+    ).scalar_one()
+    if work.sanctioned_amount_paise <= 0:
+        return None
+    return round(released / work.sanctioned_amount_paise * 100, 1)
 
 
 def build_facts(db: Session, work: Work) -> dict:
@@ -178,6 +227,27 @@ def build_facts(db: Session, work: Work) -> dict:
 
     d_rec_sanction = _days_between(work.recommendation_date, work.sanction_date)
 
+    # --- ML-computed facts (previously stubbed) ---
+    zscore = cost_zscore(db, work)
+    if_flag = iforest_flag(db, work)
+    photo_offset = _max_photo_offset(db, work)
+    cross_agency = _photo_cross_agency(db, work)
+    utilisation = _utilisation(db, work)
+
+    # Days since any evidence/field-verification was submitted for this work
+    last_activity = db.execute(
+        select(func.greatest(
+            func.max(Evidence.received_at),
+            func.max(FieldVerification.submitted_at),
+        )).select_from(Evidence).outerjoin(
+            FieldVerification, FieldVerification.work_id == Evidence.work_id
+        ).where(Evidence.work_id == work.id)
+    ).scalar_one()
+
+    days_since_progress: int | None = None
+    if last_activity:
+        days_since_progress = (datetime.now(UTC) - last_activity).days
+
     return {
         # identity
         "work_code": work.work_code,
@@ -200,9 +270,17 @@ def build_facts(db: Session, work: Work) -> dict:
         ),
         "tender_threshold_paise": TENDER_THRESHOLD_PAISE,
         "work_ceiling_paise": WORK_CEILING_PAISE,
-        # statutory
+        # statutory (seeded constants for now — live when annex_ii.yaml exists)
         "is_prohibited_category": work.category in PROHIBITED_CATEGORIES,
         "siblings_same_day_same_agency": siblings,
+        "tender_conducted": None,        # no tender register data source yet
+        "uc_pending_days": None,          # no UC tracking data source yet
+        "creates_durable_asset": None,    # needs work-type classification
+        "agency_blacklisted": None,       # needs blacklist register
+        "duplicate_sanction_code": None,  # needs cross-scheme dedup
+        "land_is_public": None,           # needs land records integration
+        "has_completion_certificate": None,
+        "private_benefit_flag": None,
         # geo & photo fraud
         "nearest_similar_work_m": nearest_m if (
             nearest_m is not None and nearest_m < GEO_DUPLICATE_RADIUS_M
@@ -212,6 +290,8 @@ def build_facts(db: Session, work: Work) -> dict:
         "photo_similarity_match_code": photo_code,
         "min_gps_trust": gps_trust,
         "citizen_mismatch_reports": citizen_mismatch,
+        "max_photo_offset_m": photo_offset,
+        "photo_shared_across_agencies": cross_agency,
         # field
         "field_measured_value": float(fv.measured_value) if fv and fv.measured_value else None,
         "field_observed_status": fv.observed_status if fv else None,
@@ -233,4 +313,10 @@ def build_facts(db: Session, work: Work) -> dict:
             and work.actual_completion_date < work.sanction_date
         ),
         "days_since_sanction": _days_between(work.sanction_date, today),
+        # ML-computed (previously dead)
+        "cost_zscore": zscore,
+        "iforest_flag": if_flag,
+        # efficiency
+        "days_since_progress_update": days_since_progress,
+        "utilisation_pct": utilisation,
     }

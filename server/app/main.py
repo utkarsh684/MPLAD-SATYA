@@ -5,17 +5,31 @@ from __future__ import annotations
 import logging
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app import errors
 from app.config import settings
 from app.db import engine
 from app.risk.engine import ENGINE_VERSION, load_rulebook
-from app.routers import admin, auth, citizen, dashboard, decisions, sync, works
+from app.routers import (
+    admin,
+    analytics,
+    auth,
+    citizen,
+    dashboard,
+    decisions,
+    esakshi,
+    evidence,
+    satellite,
+    sync,
+    works,
+)
 
 logging.basicConfig(
     level=settings.log_level,
@@ -57,8 +71,16 @@ app.add_middleware(
 
 errors.install(app)
 
-for _router in (auth, works, dashboard, decisions, citizen, sync, admin):
+for _router in (
+    auth, works, dashboard, decisions, citizen, sync,
+    admin, evidence, esakshi, satellite, analytics,
+):
     app.include_router(_router.router)
+
+
+_media = Path(settings.media_root)
+_media.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=str(_media)), name="media")
 
 
 @app.middleware("http")
