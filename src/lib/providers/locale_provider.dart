@@ -1,0 +1,51 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Manages locale selection with local persistence.
+class LocaleProvider extends ChangeNotifier {
+  static const String _key = 'locale_code';
+
+  Locale _locale = const Locale('en');
+
+  Locale get locale => _locale;
+
+  /// Supported locales with native display names.
+  static const Map<String, String> supportedLocales = {
+    'en': 'English',
+    'hi': 'हिन्दी',
+    'bn': 'বাংলা',
+    'mr': 'मराठी',
+    'ta': 'தமிழ்',
+    'te': 'తెలుగు',
+    'kn': 'ಕನ್ನಡ',
+    'gu': 'ગુજરાતી',
+    'pa': 'ਪੰਜਾਬੀ',
+  };
+
+  static List<Locale> get locales =>
+      supportedLocales.keys.map((code) => Locale(code)).toList();
+
+  LocaleProvider() {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(_key);
+    if (code != null && supportedLocales.containsKey(code)) {
+      _locale = Locale(code);
+      notifyListeners();
+    }
+  }
+
+  Future<void> setLocale(Locale locale) async {
+    if (_locale == locale) return;
+    _locale = locale;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, locale.languageCode);
+  }
+
+  String get currentLanguageName =>
+      supportedLocales[_locale.languageCode] ?? 'English';
+}
