@@ -474,8 +474,8 @@ A: No personal data, only public works public assets. Citizen identity hashed. D
 
 ```bash
 # Clone
-git clone https://github.com/yourteam/mplad-satya
-cd mplad-satya
+git clone https://github.com/utkarsh684/MPLAD-SATYA
+cd MPLAD-SATYA
 
 # Backend
 cd backend
@@ -556,7 +556,7 @@ REDIS_URL=redis://...
 ## 18. Team <a name="team"></a>
 
 **Team Name:** SATYA Coders  
-**College:** [Your College]  
+**College:** NIT Hamirpur, Himachal Pradesh  
 **PS:** SIH26102 - MoSPI MPLAD Fraud Detection
 
 | Member | Role | Skills |
@@ -568,7 +568,6 @@ REDIS_URL=redis://...
 | Member 5 | Data + Blockchain | Synthetic data, Hyperledger |
 | Member 6 | Presentation + Research | CAG reports, Guidelines, QnA |
 
-**Mentor:** Professor + Retired District Collector + MoSPI Official (as per SIH guideline: minimum one experienced technical expert)
 
 ---
 
