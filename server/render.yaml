@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: mplad-satya-api
+    runtime: python
+    # Starter, not free: free web services cold-start ~50s, which is fatal
+    # mid-demo. See server/README.md.
+    plan: starter
+    region: singapore
+    buildCommand: pip install .
+    # Pre-deploy runs exactly once per deploy. Running migrations in the start
+    # command means every uvicorn worker races on the alembic_version row.
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2 --proxy-headers --no-access-log
+    healthCheckPath: /healthz
+    envVars:
+      - key: ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: "3.12"
+      # Secrets are set in the dashboard, never in git.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SMS_PROVIDER
+        sync: false
+      - key: DEMO_MODE
+        value: "false"

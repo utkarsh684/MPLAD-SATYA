@@ -1,0 +1,35 @@
+# --- UI / design assets: intentionally untracked while backend-only ---
+public/
+src/
+dashboard/
+mobile/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- env / secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+service-account*.json
+
+# --- local media / scratch ---
+server/media/
+server/tmp/
+stitch_*.zip
+*.db
+*.sqlite3
+
+# --- os / editor ---
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install uv
+        run: pip install uv
+      
+      - name: Install dependencies
+        working-directory: server
+        run: uv sync
+      
+      - name: Lint
+        working-directory: server
+        run: uv run ruff check app/ tests/
+      
+      - name: Test
+        working-directory: server
+        run: uv run pytest tests/ -q
+        env:
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+          JWT_SECRET: "test-secret-that-is-at-least-32-characters-long"

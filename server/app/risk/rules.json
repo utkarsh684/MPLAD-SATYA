@@ -1,0 +1,400 @@
+[
+  {
+    "code": "PROHIBITED_CATEGORY",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "is_prohibited_category is True",
+    "points": "40",
+    "title": "Inadmissible work type",
+    "explanation": "Work type '{category}' is prohibited under the scheme guidelines",
+    "provenance": "Evidence: MPLADS Guidelines 2023, Annexure-II prohibited works list",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Annexure-II"
+    }
+  },
+  {
+    "code": "TENDER_SPLIT",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "siblings_same_day_same_agency >= 3 and sanctioned_amount_paise < tender_threshold_paise and (siblings_same_day_same_agency * sanctioned_amount_paise) >= tender_threshold_paise",
+    "points": "30",
+    "title": "Tender limit evasion",
+    "explanation": "{siblings_same_day_same_agency} works sanctioned to the same agency on one day, each below the {tender_threshold_paise|inr} tender limit",
+    "provenance": "Evidence: eSAKSHI sanction register, same-agency same-date clustering",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 3.9 (splitting of works)"
+    }
+  },
+  {
+    "code": "TENDER_NOT_CONDUCTED",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "tender_conducted is False and sanctioned_amount_paise >= tender_threshold_paise",
+    "points": "28",
+    "title": "No tender on record",
+    "explanation": "{sanctioned_amount_paise|inr} sanctioned above the {tender_threshold_paise|inr} threshold with no tender recorded",
+    "provenance": "Evidence: eSAKSHI procurement record",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 3.8"
+    }
+  },
+  {
+    "code": "UC_PENDING_RELEASE",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "uc_pending_days is not None and uc_pending_days > 90",
+    "points": "min(25, 10 + round(uc_pending_days / 30))",
+    "title": "Utilisation certificate overdue",
+    "explanation": "Utilisation certificate pending {uc_pending_days|days}; next instalment is blocked until it is filed",
+    "provenance": "Evidence: eSAKSHI utilisation certificate register",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 4.3 (UC before next instalment)"
+    }
+  },
+  {
+    "code": "EXCEEDS_WORK_CEILING",
+    "category": "rule",
+    "severity": "MEDIUM",
+    "when": "work_ceiling_paise is not None and sanctioned_amount_paise > work_ceiling_paise",
+    "points": "20",
+    "title": "Above per-work ceiling",
+    "explanation": "{sanctioned_amount_paise|inr} exceeds the {work_ceiling_paise|inr} ceiling for a single work",
+    "provenance": "Evidence: eSAKSHI sanction record vs scheme ceiling",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 2.4"
+    }
+  },
+  {
+    "code": "PETTY_WORK_NO_ASSET",
+    "category": "rule",
+    "severity": "MEDIUM",
+    "when": "creates_durable_asset is False",
+    "points": "18",
+    "title": "No durable asset created",
+    "explanation": "Work does not result in a durable asset, which the scheme requires",
+    "provenance": "Evidence: work classification vs scheme asset definition",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 2.2 (durable assets)"
+    }
+  },
+  {
+    "code": "SANCTION_BEFORE_RECOMMENDATION",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "days_recommend_to_sanction is not None and days_recommend_to_sanction < 0",
+    "points": "30",
+    "title": "Sanctioned before recommendation",
+    "explanation": "Sanction predates the MP recommendation by {days_recommend_to_sanction_abs|days}",
+    "provenance": "Evidence: eSAKSHI date sequence audit",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 3.2 (order of approvals)"
+    }
+  },
+  {
+    "code": "AGENCY_BLACKLISTED",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "agency_blacklisted is True",
+    "points": "35",
+    "title": "Blacklisted implementing agency",
+    "explanation": "Implementing agency '{implementing_agency}' is on the blacklist register",
+    "provenance": "Evidence: agency registration and debarment register",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 3.6"
+    }
+  },
+  {
+    "code": "DUPLICATE_SANCTION",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "duplicate_sanction_code is not None",
+    "points": "32",
+    "title": "Duplicate sanction",
+    "explanation": "Substantially identical work already sanctioned as {duplicate_sanction_code}",
+    "provenance": "Evidence: eSAKSHI sanction register cross-match",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 2.7 (duplication of works)"
+    }
+  },
+  {
+    "code": "LAND_OWNERSHIP_INVALID",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "land_is_public is False",
+    "points": "30",
+    "title": "Work on non-public land",
+    "explanation": "Asset is being created on land not recorded as public property",
+    "provenance": "Evidence: cadastral ownership record",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Annexure-II (private benefit)"
+    }
+  },
+  {
+    "code": "MISSING_COMPLETION_CERT",
+    "category": "rule",
+    "severity": "MEDIUM",
+    "when": "status == 'completed' and has_completion_certificate is False",
+    "points": "15",
+    "title": "Completion certificate missing",
+    "explanation": "Work is marked complete with no completion certificate on record",
+    "provenance": "Evidence: eSAKSHI document register",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 4.2"
+    }
+  },
+  {
+    "code": "INADMISSIBLE_PRIVATE_BENEFIT",
+    "category": "rule",
+    "severity": "HIGH",
+    "when": "private_benefit_flag is True",
+    "points": "30",
+    "title": "Private or commercial benefit",
+    "explanation": "Work appears to benefit a private or commercial entity rather than the public",
+    "provenance": "Evidence: beneficiary classification review",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Annexure-II Item 3"
+    }
+  },
+  {
+    "code": "COST_ANOMALY_BENCHMARK",
+    "category": "anomaly",
+    "severity": "HIGH",
+    "when": "cost_ratio is not None and cost_ratio >= 1.5",
+    "points": "min(25, round((cost_ratio - 1.0) / 2.0 * 25))",
+    "title": "Cost anomaly",
+    "explanation": "Reported {sanctioned_amount_paise|inr} is {cost_ratio|x} the {benchmark_total_paise|inr} benchmark",
+    "provenance": "Evidence: eSAKSHI vs. benchmark database",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 3.11 (reasonableness of rates)"
+    },
+    "note": "Calibration: a 3x overstatement saturates the anomaly budget."
+  },
+  {
+    "code": "COST_ZSCORE_OUTLIER",
+    "category": "anomaly",
+    "severity": "MEDIUM",
+    "when": "cost_zscore is not None and cost_zscore >= 3.0",
+    "points": "min(15, round(cost_zscore * 3))",
+    "title": "Unit cost outlier",
+    "explanation": "Unit cost is {cost_zscore|x} standard deviations above the district mean for '{category}' works",
+    "provenance": "Evidence: statistical comparison against same-category works in this state",
+    "refs": {}
+  },
+  {
+    "code": "IFOREST_ANOMALY",
+    "category": "anomaly",
+    "severity": "LOW",
+    "when": "iforest_flag is True",
+    "points": "6",
+    "title": "Multivariate cost anomaly",
+    "explanation": "Cost, quantity and amount together fall outside the normal pattern for this work type",
+    "provenance": "Evidence: unsupervised anomaly detector (Isolation Forest) over sanctioned works",
+    "refs": {}
+  },
+  {
+    "code": "UNIT_RATE_OUTLIER",
+    "category": "anomaly",
+    "severity": "MEDIUM",
+    "when": "unit_rate_ratio is not None and unit_rate_ratio >= 2.0",
+    "points": "min(12, round((unit_rate_ratio - 1.0) * 8))",
+    "title": "Unit rate above schedule",
+    "explanation": "Unit rate is {unit_rate_ratio|x} the scheduled rate in {benchmark_source}",
+    "provenance": "Evidence: {benchmark_source}",
+    "refs": {}
+  },
+  {
+    "code": "COST_REVISION_SPIKE",
+    "category": "anomaly",
+    "severity": "MEDIUM",
+    "when": "cost_revision_ratio is not None and cost_revision_ratio >= 1.3",
+    "points": "min(12, round((cost_revision_ratio - 1.0) * 20))",
+    "title": "Cost revised upward",
+    "explanation": "Sanctioned cost is {cost_revision_ratio|x} the original estimate",
+    "provenance": "Evidence: eSAKSHI estimate vs sanction comparison",
+    "refs": {}
+  },
+  {
+    "code": "QTY_IMPLAUSIBLE",
+    "category": "anomaly",
+    "severity": "LOW",
+    "when": "sanctioned_qty is not None and sanctioned_qty <= 0",
+    "points": "8",
+    "title": "Implausible quantity",
+    "explanation": "Sanctioned quantity is recorded as {sanctioned_qty}, which cannot be verified",
+    "provenance": "Evidence: eSAKSHI quantity field",
+    "refs": {}
+  },
+  {
+    "code": "GEO_DUPLICATE",
+    "category": "fraud",
+    "severity": "MEDIUM",
+    "when": "nearest_similar_work_m is not None and nearest_similar_work_m < 10",
+    "points": "max(0, 20 - round(nearest_similar_work_m / 4.0))",
+    "title": "Location anomaly",
+    "explanation": "Another similar work sanctioned {nearest_similar_work_m|m} away",
+    "provenance": "Evidence: eSAKSHI & satellite overlay",
+    "refs": {
+      "guideline": "MPLADS Guidelines 2023, Para 2.7 (duplication of works)"
+    },
+    "note": "20 points, less 1 for every 4 m of separation from the nearest similar work."
+  },
+  {
+    "code": "IMAGE_REUSE",
+    "category": "fraud",
+    "severity": "HIGH",
+    "when": "max_photo_similarity is not None and max_photo_similarity >= 0.90",
+    "points": "16 if max_photo_similarity >= 0.95 else 10",
+    "title": "Image similarity",
+    "explanation": "{max_photo_similarity|pct} match with another work's evidence photo",
+    "provenance": "Evidence: AI image similarity",
+    "refs": {},
+    "note": "Stepped: >=95% is a near-certain re-upload, 90-95% is suggestive."
+  },
+  {
+    "code": "GPS_TRUST_LOW",
+    "category": "fraud",
+    "severity": "MEDIUM",
+    "when": "min_gps_trust is not None and min_gps_trust < 40",
+    "points": "min(15, round((40 - min_gps_trust) / 3))",
+    "title": "Location data unreliable",
+    "explanation": "Evidence photo location scores {min_gps_trust}/100 for trustworthiness",
+    "provenance": "Evidence: EXIF, mock-location and travel-speed checks",
+    "refs": {}
+  },
+  {
+    "code": "CITIZEN_MISMATCH_CLUSTER",
+    "category": "fraud",
+    "severity": "MEDIUM",
+    "when": "citizen_mismatch_reports is not None and citizen_mismatch_reports >= 5",
+    "points": "min(15, 2 * citizen_mismatch_reports)",
+    "title": "Citizen reports contradict record",
+    "explanation": "{citizen_mismatch_reports} independent citizen reports disagree with the official record",
+    "provenance": "Evidence: geo-fenced citizen verification submissions",
+    "refs": {},
+    "note": "Corroboration bar is deliberately high. Anonymous adverse reports against a named contractor are an abuse vector: a single motivated actor must not be able to manufacture risk. Below the threshold citizen reports still lower Evidence Consistency and trigger field verification, but add no points."
+  },
+  {
+    "code": "PHOTO_OFF_SITE",
+    "category": "fraud",
+    "severity": "HIGH",
+    "when": "max_photo_offset_m is not None and max_photo_offset_m > 200",
+    "points": "min(18, round(max_photo_offset_m / 100))",
+    "title": "Evidence photo taken off site",
+    "explanation": "An evidence photo was captured {max_photo_offset_m|m} from the sanctioned location",
+    "provenance": "Evidence: EXIF GPS vs sanctioned coordinates",
+    "refs": {}
+  },
+  {
+    "code": "IMPOSSIBLE_COMPLETION_TIME",
+    "category": "fraud",
+    "severity": "HIGH",
+    "when": "days_sanction_to_completion is not None and days_sanction_to_completion < 7",
+    "points": "20",
+    "title": "Implausible completion time",
+    "explanation": "Work recorded as completed {days_sanction_to_completion|days} after sanction",
+    "provenance": "Evidence: eSAKSHI timeline analysis",
+    "refs": {}
+  },
+  {
+    "code": "BACKDATED_COMPLETION",
+    "category": "fraud",
+    "severity": "MEDIUM",
+    "when": "completion_before_sanction is True",
+    "points": "18",
+    "title": "Completion predates sanction",
+    "explanation": "Completion date falls before the sanction date",
+    "provenance": "Evidence: eSAKSHI timeline analysis",
+    "refs": {}
+  },
+  {
+    "code": "SAME_PHOTO_CROSS_AGENCY",
+    "category": "fraud",
+    "severity": "HIGH",
+    "when": "photo_shared_across_agencies is True",
+    "points": "16",
+    "title": "Evidence shared across agencies",
+    "explanation": "The same evidence photo appears under a different implementing agency",
+    "provenance": "Evidence: perceptual hash cross-agency match",
+    "refs": {}
+  },
+  {
+    "code": "MEASUREMENT_MISMATCH",
+    "category": "field",
+    "severity": "HIGH",
+    "when": "measurement_shortfall_pct is not None and measurement_shortfall_pct >= 10",
+    "points": "15 if measurement_shortfall_pct >= 40 else (10 if measurement_shortfall_pct >= 25 else 5)",
+    "title": "Measurement mismatch",
+    "explanation": "Observed {field_measured_value} {qty_unit} vs {sanctioned_qty} {qty_unit} sanctioned",
+    "provenance": "Evidence: Field/AR measurement",
+    "refs": {},
+    "note": "Material shortfall bands: >=40% severe, >=25% significant, >=10% minor."
+  },
+  {
+    "code": "WORK_NOT_STARTED_ON_SITE",
+    "category": "field",
+    "severity": "HIGH",
+    "when": "field_observed_status == 'not_started' and physical_progress_pct > 20",
+    "points": "20",
+    "title": "No work found on site",
+    "explanation": "Field officer found no work started, against {physical_progress_pct}% progress reported",
+    "provenance": "Evidence: field verification visit",
+    "refs": {}
+  },
+  {
+    "code": "DIFFERENT_WORK_ON_SITE",
+    "category": "field",
+    "severity": "HIGH",
+    "when": "field_observed_status == 'different_work'",
+    "points": "18",
+    "title": "Different work at location",
+    "explanation": "Field officer found a different work at the sanctioned location",
+    "provenance": "Evidence: field verification visit",
+    "refs": {}
+  },
+  {
+    "code": "TIMELINE_OVERDUE",
+    "category": "inefficiency",
+    "severity": "LOW",
+    "when": "days_overdue is not None and days_overdue > 0",
+    "points": "min(10, round(days_overdue / 8))",
+    "title": "Timeline anomaly",
+    "explanation": "Work is {days_overdue|days} past its expected completion date",
+    "provenance": "Evidence: eSAKSHI timeline analysis",
+    "refs": {},
+    "note": "1 point per 8 days overdue, capped at the inefficiency budget."
+  },
+  {
+    "code": "STALLED_PROGRESS",
+    "category": "inefficiency",
+    "severity": "MEDIUM",
+    "when": "days_since_progress_update is not None and days_since_progress_update > 90",
+    "points": "min(8, round(days_since_progress_update / 45))",
+    "title": "Progress stalled",
+    "explanation": "No progress update recorded for {days_since_progress_update|days}",
+    "provenance": "Evidence: eSAKSHI progress update log",
+    "refs": {}
+  },
+  {
+    "code": "LOW_UTILISATION",
+    "category": "inefficiency",
+    "severity": "LOW",
+    "when": "utilisation_pct is not None and utilisation_pct < 50 and days_since_sanction > 365",
+    "points": "6",
+    "title": "Low fund utilisation",
+    "explanation": "Only {utilisation_pct|pct} of sanctioned funds utilised after a year",
+    "provenance": "Evidence: PFMS disbursement vs sanction",
+    "refs": {}
+  },
+  {
+    "code": "SATELLITE_INCONCLUSIVE_ESCALATE",
+    "category": "field",
+    "severity": "LOW",
+    "when": "satellite_status == 'inconclusive'",
+    "points": "0",
+    "title": "Satellite cannot resolve this work",
+    "explanation": "Imagery resolution is insufficient for a work of this footprint; field verification is required instead",
+    "provenance": "Evidence: {satellite_reason}",
+    "refs": {},
+    "note": "PROCEDURAL, ZERO POINTS. An unusable sensor must never manufacture suspicion. This reason raises field-verification priority without moving the score."
+  }
+]

@@ -1,0 +1,106 @@
+[
+  {
+    "work_code": "MP/2026/1142",
+    "narrative": "DEMO HERO - road, Ward 12, Bhopal",
+    "title": "Road Construction - Ward 12",
+    "category": "road",
+    "ward": "Ward 12",
+    "sanctioned_amount_paise": 156000000,
+    "sanctioned_qty": 100.0,
+    "qty_unit": "m",
+    "implementing_agency": "Demo Infra Ltd",
+    "inject": {
+      "cost_multiplier": 2.889,
+      "geo_duplicate_of": "MP/2026/1140",
+      "geo_offset_m": 8.2,
+      "photo_reuse_of": "MP/2026/0987",
+      "photo_hamming": 3,
+      "field_measured": 52.0,
+      "days_overdue": 40,
+      "citizen_reports": 3,
+      "gps_trust": 85
+    },
+    "expect": {
+      "score": 78,
+      "band": "red",
+      "recommended_action": "hold_field_verify",
+      "reasons": [
+        ["COST_ANOMALY_BENCHMARK", 24],
+        ["GEO_DUPLICATE", 18],
+        ["IMAGE_REUSE", 16],
+        ["MEASUREMENT_MISMATCH", 15],
+        ["TIMELINE_OVERDUE", 5]
+      ]
+    }
+  },
+  {
+    "work_code": "MP/2026/1139",
+    "narrative": "Drainage - Ward 7, medium risk / review required",
+    "title": "Drainage Work - Ward 7",
+    "category": "drain",
+    "ward": "Ward 7",
+    "sanctioned_amount_paise": 82000000,
+    "sanctioned_qty": 200.0,
+    "qty_unit": "m",
+    "implementing_agency": "PWD Division 2",
+    "inject": {
+      "cost_multiplier": 2.1,
+      "field_measured": 150.0,
+      "days_overdue": 60,
+      "gps_trust": 78
+    },
+    "expect": {"band": "yellow"}
+  },
+  {
+    "work_code": "MP/2026/1128",
+    "narrative": "Solar street lighting - Ward 3, clean",
+    "title": "Solar Street Lighting - Ward 3",
+    "category": "streetlight",
+    "ward": "Ward 3",
+    "sanctioned_amount_paise": 41000000,
+    "sanctioned_qty": 40.0,
+    "qty_unit": "nos",
+    "implementing_agency": "MP Urban Development Co",
+    "inject": {"cost_multiplier": 1.35, "field_measured": 40.0, "days_overdue": 0},
+    "expect": {"band": "green"}
+  },
+  {
+    "work_code": "MP/2026/1114",
+    "narrative": "Community water kiosk - Ward 9, clean",
+    "title": "Community Water Kiosk - Ward 9",
+    "category": "water_supply",
+    "ward": "Ward 9",
+    "sanctioned_amount_paise": 127500000,
+    "sanctioned_qty": 300.0,
+    "qty_unit": "m",
+    "implementing_agency": "PHE Division 1",
+    "inject": {"cost_multiplier": 1.2, "field_measured": 298.0, "days_overdue": 0},
+    "expect": {"band": "green"}
+  },
+  {
+    "work_code": "MP/2026/1140",
+    "narrative": "Geo-duplicate partner for the hero work",
+    "title": "Road Resurfacing - Ward 12",
+    "category": "road",
+    "ward": "Ward 12",
+    "sanctioned_amount_paise": 64000000,
+    "sanctioned_qty": 90.0,
+    "qty_unit": "m",
+    "implementing_agency": "Demo Infra Ltd",
+    "inject": {"cost_multiplier": 1.32, "days_overdue": 0},
+    "expect": {}
+  },
+  {
+    "work_code": "MP/2026/0987",
+    "narrative": "Source of the reused evidence photo",
+    "title": "Road Construction - Ward 5",
+    "category": "road",
+    "ward": "Ward 5",
+    "sanctioned_amount_paise": 71000000,
+    "sanctioned_qty": 120.0,
+    "qty_unit": "m",
+    "implementing_agency": "Narmada Constructions",
+    "inject": {"cost_multiplier": 1.1, "days_overdue": 0},
+    "expect": {}
+  }
+]
