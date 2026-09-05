@@ -26,7 +26,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    JSON,
     Numeric,
     SmallInteger,
     String,

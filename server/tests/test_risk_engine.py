@@ -172,7 +172,7 @@ def test_every_rule_is_reachable(rule):
         "iforest_flag": True, "unit_rate_ratio": 2.4, "cost_revision_ratio": 1.6,
         "sanctioned_qty": 0.0, "nearest_similar_work_m": 8.2,
         "max_photo_similarity": 0.96, "min_gps_trust": 20,
-        "citizen_mismatch_reports": 3, "max_photo_offset_m": 900.0,
+        "citizen_mismatch_reports": 6, "max_photo_offset_m": 900.0,
         "days_sanction_to_completion": 3, "completion_before_sanction": True,
         "photo_shared_across_agencies": True, "measurement_shortfall_pct": 48.0,
         "field_observed_status": "not_started", "physical_progress_pct": 60,

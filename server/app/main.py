@@ -15,6 +15,7 @@ from app import errors
 from app.config import settings
 from app.db import engine
 from app.risk.engine import ENGINE_VERSION, load_rulebook
+from app.routers import admin, auth, citizen, dashboard, decisions, sync, works
 
 logging.basicConfig(
     level=settings.log_level,
@@ -55,6 +56,9 @@ app.add_middleware(
 )
 
 errors.install(app)
+
+for _router in (auth, works, dashboard, decisions, citizen, sync, admin):
+    app.include_router(_router.router)
 
 
 @app.middleware("http")

@@ -31,6 +31,18 @@ action_labels:
   manual_review:     "SEND FOR REVIEW"
   hold_field_verify: "HOLD RELEASE FOR FIELD REVIEW"
 
+# Evidence Consistency. Each informative source carries equal weight: none of
+# them is a priori more truthful, and inventing a hierarchy we cannot justify
+# would be a fabricated parameter. Sources that are INCONCLUSIVE or UNAVAILABLE
+# are excluded from both numerator and denominator - "the sensor cannot see
+# this" is not evidence of wrongdoing. Tunable per district once real outcomes
+# exist to calibrate against.
+consistency_source_weights:
+  official_record: 1.0
+  satellite: 1.0
+  citizen: 1.0
+  field: 1.0
+
 # Rendered on every risk screen. Server-owned so a client build cannot drop it.
 disclaimer: "AI recommendation - final decision by authorised officer."
 

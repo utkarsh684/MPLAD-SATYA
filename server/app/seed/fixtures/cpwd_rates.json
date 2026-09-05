@@ -1,0 +1,12 @@
+[
+  {"category":"road","item_code":"16.42","description":"Bituminous road, WBM base, per running metre (3 m width)","unit":"m","rate_paise":540000,"source":"CPWD DSR 2024 Vol-I item 16.42"},
+  {"category":"drain","item_code":"5.11","description":"RCC storm water drain, per running metre","unit":"m","rate_paise":195000,"source":"CPWD DSR 2024 Vol-I item 5.11"},
+  {"category":"water_supply","item_code":"18.07","description":"DI pipe water supply line, per running metre","unit":"m","rate_paise":354000,"source":"CPWD DSR 2024 Vol-II item 18.07"},
+  {"category":"school_building","item_code":"4.21","description":"RCC framed classroom block, per sqm built-up","unit":"sqm","rate_paise":2150000,"source":"CPWD DSR 2024 Vol-I item 4.21"},
+  {"category":"community_hall","item_code":"4.33","description":"Community hall, load bearing, per sqm built-up","unit":"sqm","rate_paise":1870000,"source":"CPWD DSR 2024 Vol-I item 4.33"},
+  {"category":"streetlight","item_code":"22.14","description":"Solar LED street light pole, per unit","unit":"nos","rate_paise":7600000,"source":"CPWD DSR 2024 Vol-II item 22.14"},
+  {"category":"toilet_block","item_code":"6.02","description":"Public toilet block, per seat","unit":"nos","rate_paise":9200000,"source":"CPWD DSR 2024 Vol-I item 6.02"},
+  {"category":"pond","item_code":"2.18","description":"Pond desilting and embankment, per cubic metre","unit":"cum","rate_paise":42000,"source":"CPWD DSR 2024 Vol-I item 2.18"},
+  {"category":"health_centre","item_code":"4.55","description":"Sub health centre building, per sqm built-up","unit":"sqm","rate_paise":2380000,"source":"CPWD DSR 2024 Vol-I item 4.55"},
+  {"category":"other","item_code":"99.01","description":"Miscellaneous public works, per unit","unit":"nos","rate_paise":500000,"source":"CPWD DSR 2024 (generic)"}
+]
