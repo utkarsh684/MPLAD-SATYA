@@ -605,4 +605,4 @@ No judge can reject because rejecting = rejecting Digital India, IndiaAI, CAG, V
 
 **Live Demo:** https://mplad-satya.vercel.app | **Video:** [YouTube Golden Path] | **PPT:** [SIH Template 6 Slides]
 
-**Contact:** satya.coders@college.edu | **GitHub:** github.com/satya-coders/mplad-satya
+**GitHub:** github.com/utkarsh684/MPLAD-SATYA
