@@ -22,6 +22,11 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   animated_text_kit: ^4.2.3
   percent_indicator: ^4.2.5
+  # --- backend integration ---
+  http: ^1.2.2
+  geolocator: ^13.0.2
+  image_picker: ^1.1.2
+  connectivity_plus: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -30,3 +35,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # Official mark. The largest on-screen use is the 148 pt splash, which
+    # needs 444 px even on a 3x display, so a single 512 px asset covers
+    # every density without shipping a second megabyte in the APK.
+    - assets/logo.png
