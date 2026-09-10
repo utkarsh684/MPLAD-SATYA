@@ -24,7 +24,6 @@ service-account*.json
 # --- local media / scratch ---
 server/media/
 server/tmp/
-stitch_*.zip
 *.db
 *.sqlite3
 
