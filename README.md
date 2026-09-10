@@ -66,7 +66,7 @@ without being labelled as simulated, in the API **and** on screen.
 | **Nominatim** geocoding | 🟢 LIVE | Yes | Place search, throttled to 1 req/s with an identifying User-Agent per their usage policy. Never used for bulk geocoding |
 | **Field evidence** | 🔵 LOCAL | n/a — it is our own data | Real uploads: sha256, EXIF, GPS trust, face blur, pHash, near-duplicate search |
 | **CPWD DSR 2024** | 🔵 OFFICIAL | Yes | Published schedule of rates, transcribed with item-level references (`CPWD DSR 2024 Vol-I item 16.42`). CPWD publishes no API |
-| **ISRO Bhuvan** | 🟢 LIVE *when configured* / 🟠 FIXTURE | Yes | Real WMS `GetMap` under `SATELLITE_ADAPTER=bhuvan`; a deterministic offline fixture otherwise. **Every observation is stamped LIVE or FIXTURE in the UI** |
+| **ISRO Bhuvan** | 🔴 LIVE call succeeds, returns **UNAVAILABLE** | Yes | Endpoint verified reachable 2026-09-10. The public `bhuvan-vec2` service publishes *thematic vector* layers, not per-location imagery — a real key is required. A live call honestly reports `unavailable`; `fixture` remains the default. [Details](#on-satellite--what-it-can-and-cannot-say) |
 | **eSAKSHI** | 🟠 DEMO ADAPTER | **No** | MoSPI publishes no public REST API |
 
 ### On eSAKSHI
@@ -100,6 +100,27 @@ Verdict states: `match` · `mismatch` · `inconclusive` · `unavailable`.
 A WMS timeout or an undecodable tile is **`unavailable`** — a service outage,
 never a finding about the work. An `inconclusive` reading contributes **zero**
 points and can never raise a score.
+
+#### What the live endpoint actually returned (verified 2026-09-10)
+
+The Bhuvan path was exercised against the real service, and the result changed
+the implementation:
+
+- The hardcoded layer `india3` **does not exist** — the service answers HTTP 200
+  with an OGC `LayerNotDefined`. The live path had **never once** produced a
+  reading.
+- Layers that *do* exist return HTTP 200 `image/png` — but a **flat
+  single-colour tile, byte-identical for Bhopal and for Delhi**.
+
+A flat red fill scores **+0.996** on the brightness index. Simply correcting the
+layer name would therefore have made every work in India report the same
+confident "built-up" signature: fabricated evidence at national scale, produced
+by a bug that looked like a fix.
+
+`_is_degenerate_tile()` now rejects any tile with near-zero per-channel spatial
+variance regardless of configured layer, so the observation degrades to
+`unavailable` with a reason naming the cause. **Only running the real
+integration surfaced this** — every unit test with a stubbed tile had passed.
 
 Most MPLADS works are physically smaller than the sensor can resolve, so
 `inconclusive` is the *expected* result, not a failure.
@@ -613,7 +634,10 @@ one you declared first.
 | **Citizen reports are unweighted by reputation** | A coordinated group could file matching reports. Mitigated only by cross-source consistency today |
 | **GPS can be spoofed** | Mock-location is detected and flagged into the trust score, but a determined spoof on a rooted device is not fully defeated |
 | **Tokens in `SharedPreferences`** | Readable on a rooted device. `flutter_secure_storage` is the upgrade path; access tokens are short-lived |
-| **APK not yet built in this environment** | The Flutter toolchain is not installed here, so `flutter analyze` / `flutter test` / `flutter build apk` have not been run. Verified by static review only |
+| **Rejected sync items are not auto-retried** | By design — the server will never accept them. They are surfaced in Settings rather than dropped, and must be re-recorded manually |
+| **APK not built** | No Flutter, Dart, JDK, Android SDK or adb in this environment (`command -v` returns nothing for all six). `flutter analyze` / `flutter test` / `flutter build apk` have **not** been run; the APK is **NOT VERIFIED**. Dart is validated by syntax, import-resolution and contract checks only |
+| **Bhuvan live returns UNAVAILABLE** | The endpoint is reachable and the request genuinely succeeds, but the public service serves thematic vector layers rather than per-location imagery. Needs a registered ISRO API key |
+| **Only English and Hindi** | The other seven language maps are 11–25 % complete and are deliberately withheld from the picker. `test/localization_test.dart` fails the build if the advertised list runs ahead of the translations |
 
 ### What would move each of these
 
