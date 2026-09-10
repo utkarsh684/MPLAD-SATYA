@@ -42,6 +42,60 @@ def _work_location(work: Work) -> tuple[float, float]:
         return 23.2599, 77.4126
 
 
+# Raster formats only. SVG is deliberately absent: it is XML, it can carry
+# script, and it is not a camera output. GIF is absent because it is not a
+# photographic evidence format and its decoder surface buys us nothing.
+_ALLOWED_IMAGE_FORMATS = {
+    "JPEG": (".jpg", "image/jpeg"),
+    "PNG": (".png", "image/png"),
+    "WEBP": (".webp", "image/webp"),
+    "HEIF": (".heic", "image/heic"),
+}
+
+
+def _verify_image(data: bytes) -> tuple[str, str]:
+    """Confirm the bytes really are a supported image; return (ext, mime).
+
+    Pillow reads the container header rather than trusting the filename or the
+    Content-Type header, both of which the uploader controls. `verify()` then
+    walks the stream far enough to reject a truncated or malformed file before
+    it enters the evidence chain, so a corrupt upload fails here with a clear
+    error instead of surfacing as a broken image days later in an audit.
+    """
+    from io import BytesIO
+
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        with Image.open(BytesIO(data)) as probe:
+            fmt = (probe.format or "").upper()
+            probe.verify()
+    except UnidentifiedImageError as exc:
+        raise ApiError(
+            "FILE_NOT_AN_IMAGE",
+            "That file is not a readable image. Upload a photo taken with the "
+            "camera (JPEG, PNG, WEBP or HEIC).",
+            415,
+        ) from exc
+    except Exception as exc:
+        raise ApiError(
+            "FILE_CORRUPT",
+            "The image could not be read - it may have been truncated during "
+            "upload. Try again.",
+            400,
+        ) from exc
+
+    if fmt not in _ALLOWED_IMAGE_FORMATS:
+        raise ApiError(
+            "FILE_TYPE_NOT_ALLOWED",
+            f"{fmt or 'That file type'} is not accepted as evidence. "
+            "Use JPEG, PNG, WEBP or HEIC.",
+            415,
+            details={"detected_format": fmt},
+        )
+    return _ALLOWED_IMAGE_FORMATS[fmt]
+
+
 @router.post("/works/{work_code:path}/evidence", operation_id="uploadEvidence",
              response_model=EvidenceOut)
 async def upload_evidence(
@@ -68,9 +122,20 @@ async def upload_evidence(
     data = await file.read()
     if len(data) > 15_000_000:
         raise ApiError("FILE_TOO_LARGE", "Maximum 15 MB.", 413)
+    if not data:
+        raise ApiError("FILE_EMPTY", "The uploaded file is empty.", 400)
 
     sha = hashlib.sha256(data).hexdigest()
-    ext = Path(file.filename or "photo.jpg").suffix or ".jpg"
+
+    # The stored extension is derived from what the bytes ACTUALLY are, never
+    # from the client-supplied filename.
+    #
+    # /media is served by StaticFiles, so a file the uploader could name
+    # "photo.html" or "photo.svg" would be stored and later served as active
+    # content on the API origin -- stored XSS against anyone who opens an
+    # evidence link. Sniffing the real format also rejects a renamed PDF or
+    # executable that would otherwise sit in the evidence chain as a "photo".
+    ext, mime = _verify_image(data)
 
     # Write to temp for processing
     with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
@@ -120,7 +185,8 @@ async def upload_evidence(
         kind="photo",
         storage_key=storage_key,
         sha256=sha,
-        mime=file.content_type or "image/jpeg",
+        # The sniffed type, not the client's Content-Type header.
+        mime=mime,
         bytes_len=len(data),
         width=w, height=h,
         captured_at=datetime.now(UTC),
