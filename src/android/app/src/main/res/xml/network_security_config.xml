@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Release policy: TLS only.
+
+  A signed APK handed to a judge must not be able to send an officer's session
+  token or a site photograph over plaintext HTTP, so cleartext is denied
+  outright here. The debug source set overrides this file with a permissive
+  version for `flutter run` against a laptop.
+
+  Consequence: a release build must be given an https:// API_BASE_URL.
+    flutter build apk --dart-define=API_BASE_URL=https://<host>
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

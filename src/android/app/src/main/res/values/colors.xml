@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppColors.navy — the native splash must match the Flutter splash
+         exactly, otherwise the handover flashes a different colour. -->
+    <color name="splash_background">#0A1929</color>
+</resources>

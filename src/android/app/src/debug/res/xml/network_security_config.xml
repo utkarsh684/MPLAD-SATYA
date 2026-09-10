@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug builds only. This file shadows the release policy in src/main and is
+  never part of a signed APK.
+
+  Cleartext is permitted so `flutter run` can reach a local server on any
+  address: 10.0.2.2 from the emulator, or the laptop's LAN IP on the demo
+  hotspot. Android's network security config cannot express an IP range, so
+  enumerating private subnets is not an option — the debug/release split is.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>
