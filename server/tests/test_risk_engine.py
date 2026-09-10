@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from app.risk import assess, load_rulebook
+from app.risk.engine import _band_for
 
 RULES = json.loads((Path(__file__).parent.parent / "app/risk/rules.json").read_text())
 
@@ -186,3 +187,93 @@ def test_every_rule_is_reachable(rule):
     facts.update(REACHABILITY_OVERRIDES.get(rule["code"], {}))
     codes = {x.code for x in assess(facts).reasons}
     assert rule["code"] in codes, f"{rule['code']} never fires even on a maximally bad work"
+
+
+# --------------------------------------------------------------------------
+# Band boundary exhaustive check.
+#
+# The bands in weights.yaml are inclusive ranges (0-30, 31-70, 71-100). An
+# off-by-one at 30/31 or 70/71 changes the recommended action on real money,
+# so every boundary is pinned rather than sampled.
+# --------------------------------------------------------------------------
+
+def _band(score: int) -> str:
+    _, weights, _, _ = load_rulebook()
+    return _band_for(score, weights)[0]
+
+
+@pytest.mark.parametrize(
+    "score,expected",
+    [
+        (0, "green"), (1, "green"), (15, "green"), (29, "green"), (30, "green"),
+        (31, "yellow"), (32, "yellow"), (50, "yellow"), (69, "yellow"), (70, "yellow"),
+        (71, "red"), (72, "red"), (78, "red"), (99, "red"), (100, "red"),
+    ],
+)
+def test_band_boundary_behaviour(score, expected):
+    assert _band(score) == expected
+
+
+def test_no_score_falls_through_the_bands():
+    """Every reachable score must map to a band."""
+    for score in range(0, 101):
+        assert _band(score) in {"green", "yellow", "red"}
+
+
+def test_score_is_capped_at_100():
+    """Firing everything must not exceed the total cap."""
+    everything = dict(HERO)
+    everything.update({
+        "annex_ii_prohibited": True,
+        "tender_required": True,
+        "tender_conducted": False,
+        "agency_blacklisted": True,
+        "uc_pending_days": 400,
+        "cost_zscore": 9.9,
+        "iforest_flag": True,
+        "photo_shared_across_agencies": True,
+        "max_photo_offset_m": 5000.0,
+        "field_observed_status": "not_started",
+        "physical_progress_pct": 95,
+        "days_overdue": 2000,
+        "utilisation_pct": 3.0,
+        "days_since_progress_update": 900,
+    })
+    r = assess(everything)
+    assert r.score <= 100
+    assert r.band == "red"
+    # The displayed reasons must still add up to the gauge exactly.
+    assert sum(x.points for x in r.reasons) == r.score
+
+
+def test_scoring_is_deterministic():
+    """Same facts in, byte-identical reasons out."""
+    a, b = assess(HERO), assess(HERO)
+    assert a.score == b.score
+    assert [(x.code, x.points) for x in a.reasons] == [
+        (x.code, x.points) for x in b.reasons
+    ]
+
+
+def test_reason_points_always_sum_to_score():
+    """The explainability contract, across a spread of fact sets."""
+    for overrides in [
+        {},
+        {"cost_ratio": 1.2},
+        {"days_overdue": 500},
+        {"nearest_similar_work_m": 2.0},
+        {"max_photo_similarity": 0.99},
+    ]:
+        facts = dict(HERO)
+        facts.update(overrides)
+        r = assess(facts)
+        assert sum(x.points for x in r.reasons) == r.score, overrides
+
+
+def test_negative_points_never_reduce_a_score():
+    """A malformed rule value must be skipped, not subtracted."""
+    facts = dict(HERO)
+    facts["days_overdue"] = -50
+    r = assess(facts)
+    assert r.score >= 0
+    assert all(x.points >= 0 for x in r.reasons)
