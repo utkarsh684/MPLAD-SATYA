@@ -1,7 +1,12 @@
 # --- design assets: mockups and Stitch exports stay untracked ---
-public/
-dashboard/
-mobile/
+#
+# Anchored with a leading slash. Unanchored, "dashboard/" matches a directory
+# of that name at ANY depth, so it was also swallowing
+# src/lib/features/dashboard/ -- a new file added there would have been
+# silently invisible to git, the same failure the stale "src/" rule caused.
+/public/
+/dashboard/
+/mobile/
 
 # --- Python ---
 __pycache__/
