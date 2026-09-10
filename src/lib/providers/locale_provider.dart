@@ -9,17 +9,17 @@ class LocaleProvider extends ChangeNotifier {
 
   Locale get locale => _locale;
 
-  /// Supported locales with native display names.
+  /// Locales whose translation is complete, with native display names.
+  ///
+  /// Deliberately two entries, not nine. Seven further language maps exist in
+  /// `app_localizations.dart` at 11-25 % coverage; offering them would give an
+  /// officer a mostly-English screen under a Bengali or Tamil label. A locale
+  /// is added here only once its map is complete, and
+  /// `test/localization_test.dart` fails the build if this list ever runs
+  /// ahead of the translations.
   static const Map<String, String> supportedLocales = {
     'en': 'English',
     'hi': 'हिन्दी',
-    'bn': 'বাংলা',
-    'mr': 'मराठी',
-    'ta': 'தமிழ்',
-    'te': 'తెలుగు',
-    'kn': 'ಕನ್ನಡ',
-    'gu': 'ગુજરાતી',
-    'pa': 'ਪੰਜਾਬੀ',
   };
 
   static List<Locale> get locales =>

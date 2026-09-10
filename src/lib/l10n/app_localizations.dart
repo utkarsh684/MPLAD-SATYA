@@ -1,7 +1,25 @@
 import 'package:flutter/material.dart';
 
 /// Custom localization delegate for MPLAD SATYA.
-/// Supports 9 Indian languages with ~80+ translatable strings.
+///
+/// Only locales whose translation is COMPLETE are advertised in
+/// [supportedLocales]. Measured coverage against `_en` (122 keys):
+///
+///     en  122/122  100%   advertised
+///     hi  122/122  100%   advertised
+///     bn   31/122   25%   withheld
+///     mr   21/122   17%   withheld
+///     ta   19/122   16%   withheld
+///     te   15/122   12%   withheld
+///     kn   13/122   11%   withheld
+///     gu   13/122   11%   withheld
+///     pa   13/122   11%   withheld
+///
+/// The partial maps are kept below as a starting point for translators, but
+/// offering them in the picker would hand an officer a three-quarters-English
+/// interface and call it Bengali support. A locale joins [supportedLocales]
+/// when its map is complete -- `test/localization_test.dart` enforces that,
+/// so the list cannot drift ahead of the translations.
 class AppLocalizations {
   final Locale locale;
 
@@ -17,14 +35,17 @@ class AppLocalizations {
   static final List<Locale> supportedLocales = [
     const Locale('en'),
     const Locale('hi'),
-    const Locale('bn'),
-    const Locale('mr'),
-    const Locale('ta'),
-    const Locale('te'),
-    const Locale('kn'),
-    const Locale('gu'),
-    const Locale('pa'),
   ];
+
+  /// Every locale with a map in this file, complete or not. Exposed for the
+  /// coverage test; never for the UI.
+  static const List<String> allLocaleCodes = [
+    'en', 'hi', 'bn', 'mr', 'ta', 'te', 'kn', 'gu', 'pa',
+  ];
+
+  /// Key/value maps by language code, for coverage verification.
+  static Map<String, Map<String, String>> get localizedStringsForTest =>
+      _localizedStrings;
 
   String get(String key) {
     final langStrings = _localizedStrings[locale.languageCode];
@@ -44,7 +65,6 @@ class AppLocalizations {
   String get signIn => get('signIn');
   String get officerId => get('officerId');
   String get password => get('password');
-  String get continueAsDemo => get('continueAsDemo');
 
   // Navigation
   String get dashboard => get('dashboard');
@@ -214,7 +234,6 @@ class AppLocalizations {
     'signIn': 'Sign In',
     'officerId': 'Officer ID',
     'password': 'Password',
-    'continueAsDemo': 'Continue as Demo Officer',
     'dashboard': 'Dashboard',
     'investigations': 'Investigations',
     'projects': 'Projects',
@@ -340,7 +359,6 @@ class AppLocalizations {
     'signIn': 'साइन इन',
     'officerId': 'अधिकारी आईडी',
     'password': 'पासवर्ड',
-    'continueAsDemo': 'डेमो अधिकारी के रूप में जारी रखें',
     'dashboard': 'डैशबोर्ड',
     'investigations': 'जांच',
     'projects': 'परियोजनाएं',
@@ -465,7 +483,6 @@ class AppLocalizations {
     'signIn': 'সাইন ইন',
     'officerId': 'অফিসার আইডি',
     'password': 'পাসওয়ার্ড',
-    'continueAsDemo': 'ডেমো অফিসার হিসেবে চালিয়ে যান',
     'dashboard': 'ড্যাশবোর্ড',
     'investigations': 'তদন্ত',
     'projects': 'প্রকল্প',
@@ -500,7 +517,6 @@ class AppLocalizations {
     'signIn': 'साइन इन',
     'officerId': 'अधिकारी आयडी',
     'password': 'पासवर्ड',
-    'continueAsDemo': 'डेमो अधिकारी म्हणून सुरू ठेवा',
     'dashboard': 'डॅशबोर्ड',
     'investigations': 'तपास',
     'projects': 'प्रकल्प',
@@ -525,7 +541,6 @@ class AppLocalizations {
     'signIn': 'உள்நுழைக',
     'officerId': 'அதிகாரி அடையாளம்',
     'password': 'கடவுச்சொல்',
-    'continueAsDemo': 'செயல்விளக்க அதிகாரியாக தொடரவும்',
     'dashboard': 'முகப்புப்பலகை',
     'investigations': 'விசாரணைகள்',
     'projects': 'திட்டங்கள்',
