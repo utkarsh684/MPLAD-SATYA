@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="1281" height="1227" alt="logo" src="https://github.com/user-attachments/assets/fdb91493-8876-40fa-a6fa-e8276b6268bc" />
+<img width="200" height="200" alt="logo" src="https://github.com/user-attachments/assets/fdb91493-8876-40fa-a6fa-e8276b6268bc" />
 
 # MPLAD SATYA
 
