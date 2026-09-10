@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../core/theme/app_colors.dart';
 
-/// MPLAD SATYA logo widget — magnifying glass over a map/grid concept.
-/// Reusable and replaceable with a final asset later.
+/// The official MPLAD SATYA mark.
+///
+/// Previously this drew an approximation in code — a magnifying-glass icon over
+/// coloured dots. It now renders the real asset, so what a judge sees on the
+/// splash is the same mark used everywhere else.
 class AppLogo extends StatelessWidget {
-  final double size;
-  final bool showText;
-  final bool light; // use light colors (for dark backgrounds)
-
   const AppLogo({
     super.key,
     this.size = 48,
@@ -16,88 +16,88 @@ class AppLogo extends StatelessWidget {
     this.light = false,
   });
 
+  final double size;
+  final bool showText;
+
+  /// Wordmark tuned for a dark ground.
+  final bool light;
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        Image.asset(
+          'assets/logo.png',
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            color: light
-                ? AppColors.white.withValues(alpha: 0.12)
-                : AppColors.govBlue.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(size * 0.25),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Grid/map dots representing infrastructure
-              Positioned(
-                top: size * 0.2,
-                left: size * 0.2,
-                child: _dot(size * 0.06, AppColors.indiaGreen.withValues(alpha: 0.6)),
-              ),
-              Positioned(
-                top: size * 0.3,
-                right: size * 0.25,
-                child: _dot(size * 0.05, AppColors.saffron.withValues(alpha: 0.6)),
-              ),
-              Positioned(
-                bottom: size * 0.25,
-                left: size * 0.3,
-                child: _dot(size * 0.05, AppColors.riskMedium.withValues(alpha: 0.5)),
-              ),
-              Positioned(
-                bottom: size * 0.3,
-                right: size * 0.2,
-                child: _dot(size * 0.04, AppColors.riskCritical.withValues(alpha: 0.5)),
-              ),
-              // Magnifying glass
-              Icon(
-                Icons.search_rounded,
-                size: size * 0.5,
-                color: light ? AppColors.white : AppColors.govBlue,
-              ),
-            ],
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          // The mark is the app's identity; if the asset ever fails to decode,
+          // fall back to the wordmark rather than a broken-image box.
+          errorBuilder: (context, _, __) => Icon(
+            Icons.account_balance_rounded,
+            size: size * 0.8,
+            color: light ? AppColors.white : AppColors.govBlue,
           ),
         ),
         if (showText) ...[
-          SizedBox(height: size * 0.15),
-          Text(
-            'MPLAD',
-            style: GoogleFonts.inter(
-              fontSize: size * 0.22,
-              fontWeight: FontWeight.w700,
-              color: light ? AppColors.white : AppColors.navy,
-              letterSpacing: 2,
-              height: 1.1,
-            ),
-          ),
-          Text(
-            'SATYA',
-            style: GoogleFonts.inter(
-              fontSize: size * 0.3,
-              fontWeight: FontWeight.w800,
-              color: light ? AppColors.saffron : AppColors.govBlue,
-              letterSpacing: 3,
-              height: 1.2,
-            ),
-          ),
+          SizedBox(height: size * 0.14),
+          AppWordmark(size: size * 0.32, light: light),
         ],
       ],
     );
   }
+}
 
-  Widget _dot(double dotSize, Color color) {
-    return Container(
-      width: dotSize,
-      height: dotSize,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
+/// "MPLAD SATYA" set as a lockup. Split out so an app bar can use the wordmark
+/// without the emblem.
+class AppWordmark extends StatelessWidget {
+  const AppWordmark({
+    super.key,
+    this.size = 20,
+    this.light = false,
+    this.horizontal = false,
+  });
+
+  final double size;
+  final bool light;
+  final bool horizontal;
+
+  @override
+  Widget build(BuildContext context) {
+    final mplad = Text(
+      'MPLAD',
+      style: GoogleFonts.inter(
+        fontSize: size * 0.7,
+        fontWeight: FontWeight.w700,
+        color: light ? AppColors.white : AppColors.navy,
+        letterSpacing: size * 0.14,
+        height: 1.1,
       ),
+    );
+    final satya = Text(
+      'SATYA',
+      style: GoogleFonts.inter(
+        fontSize: size,
+        fontWeight: FontWeight.w800,
+        color: light ? AppColors.saffron : AppColors.govBlue,
+        letterSpacing: size * 0.16,
+        height: 1.15,
+      ),
+    );
+
+    if (horizontal) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [mplad, SizedBox(width: size * 0.3), satya],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [mplad, satya],
     );
   }
 }
