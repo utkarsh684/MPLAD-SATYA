@@ -656,7 +656,7 @@ is a swap of one method, not a rewrite.
 
 <div align="center">
 
-**SIH 2026 · Team SATYA Coders · NIT Hamirpur**
+**SIH 2026 · Team Lotus · NIT Hamirpur**
 
 *"SATYA provides evidence, not verdicts. Approval is an administrative action by an authorised officer."*
 

@@ -122,3 +122,40 @@ All dependencies are pinned to exact versions in `pyproject.toml`. No wildcard v
 | simpleeval | Rule evaluation sandbox | 1.0.3 |
 
 `simpleeval` is used instead of `eval()` for rule evaluation — it provides a restricted execution environment with no access to builtins, imports, or the filesystem.
+
+## Evidence upload hardening
+
+Uploaded bytes decide what is stored — never the client-supplied filename.
+
+`/media` is served by `StaticFiles`, so a file an uploader could name
+`photo.html` or `photo.svg` would previously have been stored with that
+extension and later served as **active content on the API origin**: stored XSS
+against anyone opening an evidence link. The upload path now:
+
+1. sniffs the real container format with Pillow (`Image.open` + `verify()`),
+2. rejects anything outside `{JPEG, PNG, WEBP, HEIC}` with `415`,
+3. derives both the stored extension and the recorded MIME from the **detected**
+   format, discarding the filename and the `Content-Type` header,
+4. rejects truncated or corrupt files with `400` before they enter the evidence
+   chain.
+
+SVG is deliberately excluded: it is XML, it can carry script, and no camera
+emits it. Stored filenames remain server-generated UUIDs, so path traversal via
+the filename is not reachable either.
+
+Covered by `tests/test_upload_security.py`.
+
+## Provenance integrity
+
+Two invariants are enforced in code and pinned by tests, because breaking
+either would let the product assert something it cannot support:
+
+- **UNKNOWN is never rendered as ZERO.** `consistency_pct()` returns `None`
+  when no source was informative, not `0` — 0 % means every source contradicted
+  the record, `None` means nothing could be checked. Satellite detectability
+  fields are `None` when not computed rather than `0.0`/`1.0`.
+  (`tests/test_provenance_semantics.py`)
+- **A fixture is never presentable as a live observation.** The offline
+  satellite adapter states its own synthetic nature inside the reason text an
+  officer reads, not only in a UI badge that is lost the moment the sentence is
+  quoted into a file note. (`tests/test_satellite.py`)

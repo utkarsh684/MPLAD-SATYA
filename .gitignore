@@ -1,6 +1,5 @@
-# --- UI / design assets: intentionally untracked while backend-only ---
+# --- design assets: mockups and Stitch exports stay untracked ---
 public/
-src/
 dashboard/
 mobile/
 
