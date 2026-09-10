@@ -48,12 +48,18 @@ def trigger_observation(work_code: str, db: DbSession, user: CurrentUser):
         capture_date=date.today(),
         provider=getattr(adapter, "provider", "unknown"),
         resolution_m=result.resolution_m,
-        ndbi_delta=result.ndbi_delta,
+        brightness_index=result.brightness_index,
         status=result.status,
         confidence=result.confidence,
         method=result.method,
-        min_detectable_m2=result.min_detectable_m ** 2,
-        target_footprint_m2=result.target_dimension_m ** 2,
+        # Squaring None raises; an unmeasured dimension stays unmeasured
+        # rather than becoming a stored 0 m2.
+        min_detectable_m2=(
+            result.min_detectable_m ** 2 if result.min_detectable_m is not None else None
+        ),
+        target_footprint_m2=(
+            result.target_dimension_m ** 2 if result.target_dimension_m is not None else None
+        ),
         reason=result.reason,
         raw=result.raw,
     )
@@ -72,8 +78,10 @@ def trigger_observation(work_code: str, db: DbSession, user: CurrentUser):
         "target_dimension_m": result.target_dimension_m,
         "detectability_ratio": result.detectability_ratio,
         "reason": result.reason,
-        "ndbi_delta": result.ndbi_delta,
+        "brightness_index": result.brightness_index,
+        "is_temporal_comparison": result.is_temporal_comparison,
         "adapter": settings.satellite_adapter,
+        "provider": getattr(adapter, "provider", "unknown"),
     }
 
 
@@ -102,7 +110,7 @@ def satellite_history(work_code: str, db: DbSession, user: CurrentUser):
             "confidence": float(o.confidence),
             "method": o.method,
             "reason": o.reason,
-            "ndbi_delta": o.ndbi_delta,
+            "brightness_index": o.brightness_index,
             "created_at": o.created_at.isoformat() if o.created_at else None,
         }
         for o in rows

@@ -357,8 +357,15 @@ class SatelliteResultOut(BaseModel):
     confidence: float
     method: str
     resolution_m: float
-    min_detectable_m: float
-    target_dimension_m: float
-    detectability_ratio: float
     reason: str
-    ndbi_delta: float | None = None
+    # Null when detectability was not computed. Never defaulted to 0/1, which
+    # would assert a measurement that was never taken.
+    min_detectable_m: float | None = None
+    target_dimension_m: float | None = None
+    detectability_ratio: float | None = None
+    # Visual brightness contrast, not NDBI. See app/satellite.py.
+    brightness_index: float | None = None
+    # False for a single-date observation, which cannot evidence change.
+    is_temporal_comparison: bool = False
+    adapter: str | None = None
+    provider: str | None = None

@@ -459,7 +459,13 @@ class SatelliteObservation(Base):
     resolution_m: Mapped[float] = mapped_column(Float, nullable=False)
     ndvi_before: Mapped[float | None] = mapped_column(Float)
     ndvi_after: Mapped[float | None] = mapped_column(Float)
-    ndbi_delta: Mapped[float | None] = mapped_column(Float)
+    # Physical column is still named ndbi_delta (renaming it needs a migration
+    # we cannot rehearse without Postgres in this environment), but the value
+    # is a visual brightness contrast, NOT a Normalized Difference Built-up
+    # Index: Bhuvan's public WMS serves a rendered PNG with no SWIR or NIR
+    # band. The attribute name is what the codebase reads, so it tells the
+    # truth; see BhuvanAdapter._brightness_index.
+    brightness_index: Mapped[float | None] = mapped_column("ndbi_delta", Float)
     status: Mapped[str] = mapped_column(_enum(*SOURCE_STATUSES, name="src_status_t2"))
     confidence: Mapped[float] = mapped_column(Numeric(4, 3), nullable=False)
     method: Mapped[str] = mapped_column(String(40), nullable=False)
