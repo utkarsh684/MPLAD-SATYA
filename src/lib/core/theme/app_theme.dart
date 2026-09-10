@@ -115,6 +115,19 @@ class AppTheme {
         hintStyle: GoogleFonts.inter(color: AppColors.textTertiary, fontSize: 14),
         labelStyle: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
       ),
+      // Work detail is tabbed; without this the tabs inherit an unstyled
+      // default that reads as a different app from the rest of the shell.
+      tabBarTheme: TabBarThemeData(
+        labelColor: AppColors.govBlue,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.govBlue,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: AppColors.divider,
+        labelStyle:
+            GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle:
+            GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.white,
         indicatorColor: AppColors.govBlueSurface,
@@ -267,6 +280,17 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: GoogleFonts.inter(color: AppColors.textOnDarkSecondary, fontSize: 14),
         labelStyle: GoogleFonts.inter(color: AppColors.textOnDarkSecondary, fontSize: 14),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: AppColors.govBlueLight,
+        unselectedLabelColor: AppColors.textOnDarkSecondary,
+        indicatorColor: AppColors.govBlueLight,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: AppColors.darkDivider,
+        labelStyle:
+            GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle:
+            GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,

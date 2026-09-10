@@ -73,35 +73,10 @@ class AppColors {
   static const Color darkShimmerBase = Color(0xFF1A3A5C);
   static const Color darkShimmerHighlight = Color(0xFF234E78);
 
-  /// Get risk color based on score
-  static Color riskColor(int score) {
-    if (score >= 81) return riskCritical;
-    if (score >= 61) return riskHigh;
-    if (score >= 31) return riskMedium;
-    return riskLow;
-  }
-
-  /// Get risk background color based on score (light theme)
-  static Color riskBgColor(int score, {bool isDark = false}) {
-    if (score >= 81) return isDark ? riskCriticalDarkBg : riskCriticalBg;
-    if (score >= 61) return isDark ? riskHighDarkBg : riskHighBg;
-    if (score >= 31) return isDark ? riskMediumDarkBg : riskMediumBg.withValues(alpha: 0.15);
-    return isDark ? riskLowDarkBg : riskLowBg;
-  }
-
-  /// Get risk label from score
-  static String riskLabel(int score) {
-    if (score >= 81) return 'Critical';
-    if (score >= 61) return 'High';
-    if (score >= 31) return 'Medium';
-    return 'Low';
-  }
-
-  /// Get risk icon based on score (accessibility: not color-only)
-  static IconData riskIcon(int score) {
-    if (score >= 81) return Icons.error;
-    if (score >= 61) return Icons.warning_amber;
-    if (score >= 31) return Icons.info_outline;
-    return Icons.check_circle_outline;
-  }
+  // Risk colour, label and icon are deliberately NOT resolved here.
+  //
+  // These used to be score-threshold helpers (81/61/31) that disagreed with the
+  // server's own bands (71/31), so a work the engine called HIGH RISK could
+  // render as merely "High". Band resolution now lives in `RiskBand`, which
+  // reads the band string the server sent and only falls back to the score.
 }
