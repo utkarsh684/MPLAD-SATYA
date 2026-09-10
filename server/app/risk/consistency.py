@@ -96,8 +96,15 @@ def build_verdicts(facts: dict) -> list[SourceVerdict]:
     return out
 
 
-def consistency_pct(verdicts: list[SourceVerdict]) -> int:
-    """Weighted agreement across sources that actually have something to say."""
+def consistency_pct(verdicts: list[SourceVerdict]) -> int | None:
+    """Weighted agreement across sources that actually have something to say.
+
+    Returns None -- not 0 -- when no source was informative. Those are
+    different claims: 0% means every source contradicted the record, while
+    None means nothing could be checked at all. Collapsing them would let an
+    unusable sensor read on screen as total disagreement, which is precisely
+    the suspicion an inconclusive observation must never manufacture.
+    """
     weights = _source_weights()
     numerator = 0.0
     denominator = 0.0
@@ -110,5 +117,5 @@ def consistency_pct(verdicts: list[SourceVerdict]) -> int:
         numerator += agreement * weight
         denominator += weight
     if denominator == 0:
-        return 0
+        return None
     return round(numerator / denominator * 100)

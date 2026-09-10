@@ -116,7 +116,13 @@ def district_summary(db: DbSession, user: CurrentUser):
             "district": r.name,
             "works": r.works,
             "total_sanctioned_paise": int(r.total_paise or 0),
-            "avg_risk_score": round(float(r.avg_score), 1) if r.avg_score else 0,
+            # None, not 0. This is an OUTER join: a district whose works have
+            # no current assessment yields NULL here, and reporting that as 0
+            # would paint an entirely unassessed district as the safest one on
+            # the screen.
+            "avg_risk_score": (
+                round(float(r.avg_score), 1) if r.avg_score is not None else None
+            ),
         }
         for r in rows
     ]
