@@ -697,6 +697,26 @@ one you declared first.
 | **Bhuvan live returns UNAVAILABLE** | The endpoint is reachable and the request genuinely succeeds, but the public service serves thematic vector layers rather than per-location imagery. Needs a registered ISRO API key |
 | **Only English and Hindi** | The other seven language maps are 11–25 % complete and are deliberately withheld from the picker. `test/localization_test.dart` fails the build if the advertised list runs ahead of the translations |
 
+### Found only by running against a real database
+
+`assess()` is a pure function, so the golden test scores `MP/2026/1142` to 78
+without ever touching Postgres. That is why 189 passing tests hid three bugs
+that each made the hero scenario **impossible to persist**. All three surfaced
+within minutes of pointing the seeder at a real Supabase instance:
+
+| Bug | Effect |
+|---|---|
+| `reason_cat_t` never defined `'field'` | 4 of 33 rules — including `MEASUREMENT_MISMATCH`, one of the hero's five reasons — failed to `INSERT` |
+| `Numeric` columns returned `Decimal` while annotated `float` | The facts dict is JSONB; one `Decimal` broke **every** `score_work()` |
+| `WKBElement` bound into raw SQL | psycopg3 cannot adapt it; aborted the whole facts build, so `GEO_DUPLICATE` (18 points on the hero) never fired |
+
+Together they are why the seeder's self-check reported **77, not 78**.
+
+The lesson is recorded here rather than quietly fixed: a pure-function test
+suite proves the arithmetic, never the persistence. `tests/test_rulebook_schema.py`
+and `tests/test_api_smoke.py` now cover the seams that unit tests structurally
+cannot reach.
+
 ### What would move each of these
 
 Most are integration or data-access limits rather than engineering gaps — the
