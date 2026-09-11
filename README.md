@@ -560,6 +560,28 @@ View technical details ▸   brightness contrast, ratio, method, provider
 
 ### Render + Neon — read this first
 
+`render.yaml` sits at the **repository root** with `rootDir: server`, because
+Render only auto-detects a Blueprint at the root. Deploy with
+**New → Blueprint**, point it at the repo, and every setting below is applied
+automatically — there is no form to fill in.
+
+If you wire the service up by hand instead, the monorepo needs:
+
+| Dashboard field | Value |
+|---|---|
+| Root Directory | `server` |
+| Dockerfile Path | *leave blank* — the Blueprint uses the Python runtime, not Docker |
+| Build Command | `pip install .` |
+| Pre-Deploy Command | `alembic upgrade head` |
+| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2 --proxy-headers --no-access-log` |
+| Health Check Path | `/healthz` |
+
+Only set Dockerfile Path if you deliberately choose the Docker runtime, in
+which case it is `./server/Dockerfile` (relative to the repo root) and you
+should leave Root Directory blank so the build context still contains
+`pyproject.toml`.
+
+
 `render.yaml` deploys with **`ENV=staging`, not `production`**, and that is
 deliberate.
 

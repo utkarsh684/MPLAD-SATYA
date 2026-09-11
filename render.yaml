@@ -2,6 +2,15 @@ services:
   - type: web
     name: mplad-satya-api
     runtime: python
+    # This is a monorepo: the backend is in server/, the Flutter client in src/.
+    # rootDir makes every command below run from server/, and also stops a
+    # Flutter-only commit from triggering a pointless API redeploy.
+    #
+    # This file MUST live at the repository root - Render only auto-detects a
+    # Blueprint there. It was previously at server/render.yaml, where Render
+    # never saw it, which is why the service had to be wired up by hand in the
+    # dashboard.
+    rootDir: server
     # Starter, not free: free web services cold-start ~50s, which is fatal
     # mid-demo. See server/README.md.
     plan: starter

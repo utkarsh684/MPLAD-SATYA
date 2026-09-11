@@ -70,7 +70,7 @@ class TestRenderConfigIsDeployable:
 
         import yaml
         spec = yaml.safe_load(
-            (pathlib.Path(__file__).parent.parent / "render.yaml").read_text()
+            (pathlib.Path(__file__).parent.parent.parent / "render.yaml").read_text()
         )
         env_vars = {
             v["key"]: v.get("value")
@@ -87,18 +87,43 @@ class TestRenderConfigIsDeployable:
 
         import yaml
         spec = yaml.safe_load(
-            (pathlib.Path(__file__).parent.parent / "render.yaml").read_text()
+            (pathlib.Path(__file__).parent.parent.parent / "render.yaml").read_text()
         )
         # /healthz is deliberately DB-free; pointing the platform health check
         # at a DB-backed route turns a brief Postgres blip into a restart loop.
         assert spec["services"][0]["healthCheckPath"] == "/healthz"
+
+    def test_blueprint_lives_at_the_repo_root(self):
+        """Render only auto-detects render.yaml at the repository root.
+
+        At server/render.yaml it was invisible, so the service had to be wired
+        up by hand in the dashboard - and the file's careful defaults were
+        never actually applied.
+        """
+        import pathlib
+        root = pathlib.Path(__file__).parent.parent.parent
+        assert (root / "render.yaml").exists(), "Blueprint must be at repo root"
+        assert not (root / "server" / "render.yaml").exists(), (
+            "a stale copy under server/ will drift from the real one"
+        )
+
+    def test_monorepo_root_dir_points_at_the_backend(self):
+        import pathlib
+
+        import yaml
+        spec = yaml.safe_load(
+            (pathlib.Path(__file__).parent.parent.parent / "render.yaml").read_text()
+        )
+        # Without rootDir, `pip install .` runs at the repo root where there is
+        # no pyproject.toml, and every Flutter commit redeploys the API.
+        assert spec["services"][0]["rootDir"] == "server"
 
     def test_migrations_run_once_per_deploy_not_per_worker(self):
         import pathlib
 
         import yaml
         spec = yaml.safe_load(
-            (pathlib.Path(__file__).parent.parent / "render.yaml").read_text()
+            (pathlib.Path(__file__).parent.parent.parent / "render.yaml").read_text()
         )
         svc = spec["services"][0]
         assert "alembic upgrade head" in svc.get("preDeployCommand", "")
