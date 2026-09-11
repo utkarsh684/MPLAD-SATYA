@@ -16,6 +16,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 log = logging.getLogger("satya")
@@ -92,6 +93,32 @@ def install(app: FastAPI) -> None:
         return _envelope(
             request, status.HTTP_422_UNPROCESSABLE_ENTITY,
             "VALIDATION_ERROR", "Request validation failed", field_errors=fields,
+        )
+
+    @app.exception_handler(OperationalError)
+    async def _db_unavailable(request: Request, exc: OperationalError):
+        """A database that cannot be reached is a 503, not a 500.
+
+        Found by booting the app with Postgres down: every DB-backed route
+        answered `500 INTERNAL_ERROR / "An unexpected error occurred."`, which
+        tells an officer nothing and tells the client nothing it can act on.
+        A dropped Neon connection is a transient dependency outage, so it is
+        reported as one - retryable, and distinguishable from a genuine bug in
+        our own code.
+
+        The driver's message is deliberately not forwarded: it carries the
+        host, port and database name.
+        """
+        rid = getattr(request.state, "request_id", None)
+        log.error(
+            "database unavailable request_id=%s path=%s error=%s",
+            rid, request.url.path, type(exc).__name__,
+        )
+        return _envelope(
+            request, status.HTTP_503_SERVICE_UNAVAILABLE,
+            "DATABASE_UNAVAILABLE",
+            "The service cannot reach its database right now. "
+            "This is a temporary outage - please try again shortly.",
         )
 
     @app.exception_handler(Exception)
