@@ -43,6 +43,25 @@ def db_down(client):
 class TestServesWithoutDatabase:
     """Endpoints that must work even when Postgres is down."""
 
+    def test_root_is_a_service_index_not_a_404(self, client):
+        """Opening the base URL is the first thing anyone does with a link.
+
+        It used to answer a bare JSON 404, which reads as a broken deployment.
+        """
+        r = client.get("/")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["service"] == "MPLAD SATYA API"
+        # The index must point at the things a newcomer needs.
+        for key in ("docs", "health", "readiness", "rulebook", "api_prefix"):
+            assert body[key], f"index is missing {key}"
+
+    def test_root_states_the_product_boundary(self, client):
+        """A judge reading only the base URL should still learn that SATYA
+        recommends and an officer decides."""
+        text = client.get("/").json()["description"].lower()
+        assert "authorised officer" in text
+
     def test_liveness_is_ok(self, client):
         r = client.get("/healthz")
         assert r.status_code == 200
@@ -131,7 +150,8 @@ class TestContract:
             (m, p) for p, item in spec["paths"].items()
             for m in item if m in ("get", "post", "put", "patch", "delete")
         ]
-        assert len(ops) == 40, f"expected 40 operations, found {len(ops)}"
+        # 40 business routes + the service index at /.
+        assert len(ops) == 41, f"expected 41 operations, found {len(ops)}"
 
     def test_every_operation_has_a_stable_id_for_client_generation(self, client):
         spec = client.get("/openapi.json").json()

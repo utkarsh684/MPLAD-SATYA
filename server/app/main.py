@@ -98,6 +98,33 @@ async def request_context(request: Request, call_next):
     return response
 
 
+@app.get("/", tags=["ops"], operation_id="serviceIndex", summary="Service index")
+def index():
+    """What this service is, and where to go next.
+
+    Without this the base URL answered a bare JSON 404, which reads as a
+    broken deployment to anyone who opens the link before finding /docs.
+    Deliberately DB-free, like /healthz: the index must answer even when
+    Postgres is unreachable.
+    """
+    return {
+        "service": "MPLAD SATYA API",
+        "description": (
+            "Evidence-based audit layer for MPLADS public works. "
+            "Provides evidence and a risk recommendation; approval remains an "
+            "administrative action by an authorised officer."
+        ),
+        "version": app.version,
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+        "health": "/healthz",
+        "readiness": "/readyz",
+        "rulebook": "/api/v1/admin/rules",
+        "api_prefix": "/api/v1",
+        "source": "https://github.com/utkarsh684/MPLAD-SATYA",
+    }
+
+
 @app.get("/healthz", tags=["ops"], operation_id="healthz", summary="Liveness")
 def healthz():
     """Liveness only. Deliberately does NOT touch the database.

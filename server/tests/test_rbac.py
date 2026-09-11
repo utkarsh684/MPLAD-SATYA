@@ -12,6 +12,7 @@ from app.main import app
 
 # Everything reachable without a token, and why.
 PUBLIC_ROUTES = {
+    ("/", "GET"),                           # service index: links only, no data
     ("/healthz", "GET"),                    # liveness probe
     ("/readyz", "GET"),                     # readiness, no secrets
     # /docs, /redoc and /openapi.json are Starlette routes, not APIRoutes, so
