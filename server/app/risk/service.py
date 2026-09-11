@@ -11,6 +11,30 @@ from app.risk.engine import assess
 from app.risk.facts import build_facts
 
 
+def _json_safe(value):
+    """Coerce a facts dict into something JSONB can store.
+
+    Postgres returns `numeric` for SUM/AVG over bigint, and psycopg hands that
+    back as Decimal, which json.dumps refuses. The column types were fixed to
+    asdecimal=False, but aggregate expressions have no column type to fix - so
+    the snapshot is normalised here, at the one place it is persisted, rather
+    than hunting every aggregate at every call site.
+
+    float() is safe for these values: the snapshot is a diagnostic record of
+    the inputs to a score, never money. Money is integer paise and never
+    travels through this path.
+    """
+    from decimal import Decimal
+
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list | tuple):
+        return [_json_safe(v) for v in value]
+    return value
+
+
 def score_work(db: Session, work: Work, trigger: str = "manual") -> RiskAssessment:
     """Recompute and persist. Assessments are immutable; this inserts a new row.
 
@@ -39,7 +63,7 @@ def score_work(db: Session, work: Work, trigger: str = "manual") -> RiskAssessme
         engine_version=result.engine_version,
         rules_sha256=result.rules_sha256,
         weights_sha256=result.weights_sha256,
-        inputs_snapshot=facts,
+        inputs_snapshot=_json_safe(facts),
         is_current=True,
         trigger_reason=trigger,
     )

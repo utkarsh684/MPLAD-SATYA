@@ -38,6 +38,19 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
+# NOTE ON Numeric: every Numeric column below is declared asdecimal=False.
+#
+# SQLAlchemy returns Decimal for Numeric by default, while these columns are
+# all annotated Mapped[float] - so the annotation was wrong, arithmetic mixed
+# Decimal with float, and json.dumps refused the value outright. That last one
+# broke score_work(): the facts dict goes into risk_assessments.inputs_snapshot
+# as JSONB, so a single Decimal fact made every assessment persist fail against
+# a real database.
+#
+# Money is unaffected: it is BigInteger paise and never Numeric, so exact
+# integer arithmetic is preserved. These columns are quantities, confidences
+# and weights, where float is what the code already assumed.
+
 
 def _uuid() -> uuid.UUID:
     return uuid.uuid4()
@@ -61,7 +74,12 @@ WORK_STATUSES = (
 )
 BANDS = ("green", "yellow", "red")
 RECOMMENDED_ACTIONS = ("auto_approve", "manual_review", "hold_field_verify")
-REASON_CATEGORIES = ("rule", "anomaly", "fraud", "inefficiency")
+# Must stay in step with the `category` of every rule in risk/rules.json and
+# with category_caps in weights.yaml. "field" was missing here while 4 of the
+# 33 rules used it, so any assessment containing one of them failed to INSERT -
+# including MEASUREMENT_MISMATCH, one of the hero work's five reasons.
+# tests/test_rulebook_schema.py now fails the build if they drift apart again.
+REASON_CATEGORIES = ("rule", "anomaly", "fraud", "field", "inefficiency")
 SEVERITIES = ("HIGH", "MEDIUM", "LOW")
 SOURCES = ("official_record", "satellite", "citizen", "field")
 SOURCE_STATUSES = ("available", "match", "mismatch", "inconclusive", "unavailable")
@@ -177,7 +195,7 @@ class Work(Base, SyncMixin):
 
     sanctioned_amount_paise: Mapped[int] = mapped_column(BigInteger, nullable=False)
     estimated_amount_paise: Mapped[int | None] = mapped_column(BigInteger)
-    sanctioned_qty: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    sanctioned_qty: Mapped[float | None] = mapped_column(Numeric(12, 2, asdecimal=False))
     qty_unit: Mapped[str | None] = mapped_column(String(8))
 
     status: Mapped[str] = mapped_column(_enum(*WORK_STATUSES, name="work_status_t"))
@@ -266,7 +284,7 @@ class BenchmarkRate(Base):
     unit: Mapped[str] = mapped_column(String(8), nullable=False)
     rate_paise: Mapped[int] = mapped_column(BigInteger, nullable=False)
     state: Mapped[str | None] = mapped_column(String(60))
-    region_factor: Mapped[float] = mapped_column(Numeric(5, 3), default=1.0)
+    region_factor: Mapped[float] = mapped_column(Numeric(5, 3, asdecimal=False), default=1.0)
     source: Mapped[str] = mapped_column(Text, nullable=False)
     effective_from: Mapped[date] = mapped_column(Date, nullable=False)
 
@@ -361,13 +379,13 @@ class VerificationSource(Base, SyncMixin):
     work_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("works.id"), nullable=False)
     source: Mapped[str] = mapped_column(_enum(*SOURCES, name="src_t"))
     status: Mapped[str] = mapped_column(_enum(*SOURCE_STATUSES, name="src_status_t"))
-    confidence: Mapped[float | None] = mapped_column(Numeric(4, 3))
+    confidence: Mapped[float | None] = mapped_column(Numeric(4, 3, asdecimal=False))
     # Server renders the card sentence; four sources have four sentence shapes
     # and duplicating that formatting across clients makes the demo fragile.
     headline: Mapped[str] = mapped_column(Text, nullable=False)
-    observed_value: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    observed_value: Mapped[float | None] = mapped_column(Numeric(12, 2, asdecimal=False))
     observed_unit: Mapped[str | None] = mapped_column(String(8))
-    expected_value: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    expected_value: Mapped[float | None] = mapped_column(Numeric(12, 2, asdecimal=False))
     report_count: Mapped[int] = mapped_column(Integer, default=0)
     detail: Mapped[dict | None] = mapped_column(JSONB)
     computed_at: Mapped[datetime] = mapped_column(
@@ -391,7 +409,7 @@ class FieldVerification(Base, SyncMixin):
         _enum(*FV_STATUSES, name="fv_status_t"), default="assigned"
     )
 
-    measured_value: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    measured_value: Mapped[float | None] = mapped_column(Numeric(12, 2, asdecimal=False))
     measured_unit: Mapped[str | None] = mapped_column(String(8))
     measure_method: Mapped[str | None] = mapped_column(
         _enum(*MEASURE_METHODS, name="measure_method_t")
@@ -434,7 +452,7 @@ class CitizenReport(Base, SyncMixin):
     description: Mapped[str | None] = mapped_column(Text)
     gps = mapped_column(Geography("POINT", srid=4326))
     evidence_ids: Mapped[list[uuid.UUID] | None] = mapped_column(ARRAY(UUID(as_uuid=True)))
-    credibility_weight: Mapped[float] = mapped_column(Numeric(4, 3), default=1.0)
+    credibility_weight: Mapped[float] = mapped_column(Numeric(4, 3, asdecimal=False), default=1.0)
     status: Mapped[str] = mapped_column(
         _enum("new", "triaged", "verified", "rejected", name="cr_status_t"), default="new"
     )
@@ -467,7 +485,7 @@ class SatelliteObservation(Base):
     # truth; see BhuvanAdapter._brightness_index.
     brightness_index: Mapped[float | None] = mapped_column("ndbi_delta", Float)
     status: Mapped[str] = mapped_column(_enum(*SOURCE_STATUSES, name="src_status_t2"))
-    confidence: Mapped[float] = mapped_column(Numeric(4, 3), nullable=False)
+    confidence: Mapped[float] = mapped_column(Numeric(4, 3, asdecimal=False), nullable=False)
     method: Mapped[str] = mapped_column(String(40), nullable=False)
     min_detectable_m2: Mapped[float | None] = mapped_column(Float)
     target_footprint_m2: Mapped[float | None] = mapped_column(Float)

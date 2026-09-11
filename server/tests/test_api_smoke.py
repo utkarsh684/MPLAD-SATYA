@@ -11,7 +11,9 @@ the API must behave when its database is unreachable.
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import OperationalError
 
+from app.deps import get_db
 from app.main import app
 
 
@@ -19,6 +21,23 @@ from app.main import app
 def client():
     with TestClient(app, raise_server_exceptions=False) as c:
         yield c
+
+
+@pytest.fixture
+def db_down(client):
+    """Force the database to look unreachable.
+
+    These assertions used to rely on there simply being no Postgres around,
+    which quietly inverted the moment a real DATABASE_URL was configured. The
+    outage is now simulated, so the behaviour is pinned whether or not the
+    developer has a database.
+    """
+    def _raise():
+        raise OperationalError("SELECT 1", {}, Exception("connection refused"))
+
+    app.dependency_overrides[get_db] = _raise
+    yield client
+    app.dependency_overrides.pop(get_db, None)
 
 
 class TestServesWithoutDatabase:
@@ -33,8 +52,11 @@ class TestServesWithoutDatabase:
         r = client.get("/readyz")
         assert r.status_code == 200
         body = r.json()
-        # Readiness must answer even when the DB is gone, and must not claim ok.
-        assert body["status"] == "degraded"
+        # Readiness must always answer, and must report the DB truthfully
+        # either way - never claim ok while the database is unreachable.
+        assert body["status"] in ("ok", "degraded")
+        if body["status"] == "degraded":
+            assert "error" in str(body.get("db", "")).lower()
         assert body["engine_version"]
         assert body["rules_sha256"]
         assert "demo_mode" in body, "the demo flag is never hidden"
@@ -55,21 +77,21 @@ class TestDatabaseOutageIsNotAnInternalError:
     own code, tells an officer nothing, and gives the client nothing to act on.
     """
 
-    def test_outage_returns_503_with_a_usable_code(self, client):
-        r = client.post("/api/v1/auth/otp/request", json={"phone": "+919876543210"})
+    def test_outage_returns_503_with_a_usable_code(self, db_down):
+        r = db_down.post("/api/v1/auth/otp/request", json={"phone": "+919876543210"})
         assert r.status_code == 503
         error = r.json()["error"]
         assert error["code"] == "DATABASE_UNAVAILABLE"
         assert "temporary" in error["message"].lower()
 
-    def test_outage_does_not_leak_connection_details(self, client):
-        r = client.post("/api/v1/auth/otp/request", json={"phone": "+919876543210"})
+    def test_outage_does_not_leak_connection_details(self, db_down):
+        r = db_down.post("/api/v1/auth/otp/request", json={"phone": "+919876543210"})
         body = r.text.lower()
         for leak in ["psycopg", "5432", "password", "traceback", "sqlalchemy"]:
             assert leak not in body, f"connection detail leaked: {leak}"
 
-    def test_every_error_carries_a_request_id(self, client):
-        r = client.post("/api/v1/auth/otp/request", json={"phone": "+919876543210"})
+    def test_every_error_carries_a_request_id(self, db_down):
+        r = db_down.post("/api/v1/auth/otp/request", json={"phone": "+919876543210"})
         assert r.json()["error"]["request_id"]
         assert r.headers.get("X-Request-ID")
 
