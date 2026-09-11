@@ -75,6 +75,10 @@ class ErrorState extends StatelessWidget {
     final theme = Theme.of(context);
     final api = error is ApiException ? error as ApiException : null;
     final isNetwork = api?.isNetwork ?? false;
+    // The server answering "I cannot reach my database" is a third case: the
+    // phone's connection is fine and nothing the officer did is wrong, so
+    // neither "no connection" nor "something went wrong" describes it.
+    final isOutage = api?.isDependencyOutage ?? false;
 
     return Center(
       child: Padding(
@@ -83,13 +87,23 @@ class ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isNetwork ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+              isNetwork
+                  ? Icons.wifi_off_rounded
+                  : isOutage
+                      ? Icons.cloud_off_rounded
+                      : Icons.error_outline_rounded,
               size: 48,
-              color: isNetwork ? AppColors.textTertiary : AppColors.error,
+              color: isNetwork || isOutage
+                  ? AppColors.textTertiary
+                  : AppColors.error,
             ),
             const SizedBox(height: 16),
             Text(
-              isNetwork ? 'No connection to the server' : 'Something went wrong',
+              isNetwork
+                  ? 'No connection to the server'
+                  : isOutage
+                      ? 'The server is temporarily unavailable'
+                      : 'Something went wrong',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
             ),
@@ -103,7 +117,7 @@ class ErrorState extends StatelessWidget {
                 color: theme.textTheme.bodySmall?.color,
               ),
             ),
-            if (api != null && !isNetwork) ...[
+            if (api != null && !isNetwork && !isOutage) ...[
               const SizedBox(height: 8),
               Text(
                 api.code,

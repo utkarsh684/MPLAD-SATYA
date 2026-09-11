@@ -17,6 +17,27 @@ class ApiException implements Exception {
   /// "retry" for these and "contact admin" for the rest.
   bool get isNetwork => code == 'network_error' || code == 'timeout';
 
+  /// Whether sending this again could plausibly succeed.
+  ///
+  /// The outbox discards anything permanent, because retrying a rejection
+  /// forever is pointless — so getting this wrong in the other direction
+  /// throws away an officer's field verification. A dependency outage is
+  /// transient by definition: the server answers `503 DATABASE_UNAVAILABLE`
+  /// when it cannot reach Postgres, and a queued submission must survive that
+  /// and replay, exactly as it survives being out of coverage.
+  ///
+  /// 502 and 504 are included for the same reason — a proxy or gateway blip in
+  /// front of the API says nothing about the validity of the submission.
+  bool get isRetryable =>
+      isNetwork ||
+      statusCode == 502 ||
+      statusCode == 503 ||
+      statusCode == 504;
+
+  /// True when the server was reachable but its backing service was not.
+  bool get isDependencyOutage =>
+      code == 'DATABASE_UNAVAILABLE' || statusCode == 503;
+
   bool get isUnauthorized => statusCode == 401;
 
   factory ApiException.network(Object cause) => ApiException(

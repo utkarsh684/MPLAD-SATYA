@@ -159,9 +159,40 @@ void main() {
     });
 
     test('distinguishes transport failure from server rejection', () {
-      // The outbox relies on this: only transport failures may be requeued.
       expect(ApiException.timeout().isNetwork, isTrue);
       expect(ApiException.fromResponse(403, null).isNetwork, isFalse);
+    });
+
+    test('a database outage is retryable, not a permanent rejection', () {
+      // The server answers 503 DATABASE_UNAVAILABLE when it cannot reach
+      // Postgres. The outbox discards anything permanent, so treating this as
+      // one would throw away an officer's field verification during a
+      // transient Neon blip.
+      final outage = ApiException.fromResponse(503, {
+        'error': {
+          'code': 'DATABASE_UNAVAILABLE',
+          'message': 'The service cannot reach its database right now.'
+        }
+      });
+      expect(outage.isRetryable, isTrue);
+      expect(outage.isDependencyOutage, isTrue);
+      // ...but it is NOT a phone connectivity problem, and must not be shown
+      // to the officer as one.
+      expect(outage.isNetwork, isFalse);
+    });
+
+    test('gateway errors are retryable too', () {
+      for (final status in [502, 503, 504]) {
+        expect(ApiException.fromResponse(status, null).isRetryable, isTrue,
+            reason: '$status should survive a retry');
+      }
+    });
+
+    test('a real rejection is never retried', () {
+      for (final status in [400, 401, 403, 404, 409, 413, 415, 422]) {
+        expect(ApiException.fromResponse(status, null).isRetryable, isFalse,
+            reason: '$status would retry forever');
+      }
     });
   });
 }

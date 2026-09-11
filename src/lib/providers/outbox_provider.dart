@@ -208,9 +208,11 @@ class OutboxProvider extends ChangeNotifier {
       await _send(op);
       return true;
     } on ApiException catch (e) {
-      // A rejection is permanent — queueing it would retry forever. Only
-      // transport failures are worth keeping.
-      if (!e.isNetwork) rethrow;
+      // A rejection is permanent — queueing it would retry forever. Anything
+      // that could plausibly succeed on a retry is kept, which includes a
+      // 503 from the server being unable to reach its own database: that is
+      // an outage, not a verdict on the submission.
+      if (!e.isRetryable) rethrow;
       _ops.add(op.withError(e.message));
       await _persist();
       return false;
@@ -269,7 +271,9 @@ class OutboxProvider extends ChangeNotifier {
         await _send(op);
         delivered++;
       } on ApiException catch (e) {
-        if (e.isNetwork) {
+        if (e.isRetryable) {
+          // Stop here rather than burning through the queue against a server
+          // that is currently unable to accept anything; ordering is preserved.
           blocked = true;
           remaining.add(op.withError(e.message));
         } else {
