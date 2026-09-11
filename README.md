@@ -33,24 +33,7 @@ SATYA never approves, holds or rejects a fund release. It assembles evidence and
 
 > Not every source is independent of SATYA, and the app says which. See [Data provenance](#data-provenance--what-is-real-and-what-is-not).
 
-```
-eSAKSHI Record + Satellite Imagery + Citizen Reports + Field Measurement
-    ↓                  ↓                   ↓                ↓
-Cross-verify     Visual imagery     Mismatch cluster    GPS-walk/tape
-    ↓                  ↓                   ↓                ↓
-              ┌────────────────────────────────────┐
-              │     SATYA Risk Engine (33 rules)   │
-              │   Additive scoring, per-category   │
-              │   caps, Hamilton apportionment     │
-              └──────────┬─────────────────────────┘
-                         │
-              Score 0-100 + ordered reasons
-                         │
-         ┌───────────────┼───────────────┐
-     0-30 GREEN      31-70 YELLOW     71-100 RED
- Eligible for     Send for       Hold for field
-   release          review          verification
-```
+<img width="1672" height="941" alt="ChatGPT Image Sep 11, 2026, 06_58_34 PM" src="https://github.com/user-attachments/assets/75d4699a-1df8-4a89-b8e4-cebc6e74910f" />
 
 
 ---
