@@ -55,28 +55,63 @@ def _benchmark(db: Session, work: Work) -> BenchmarkRate | None:
 
 
 def _nearest_similar_work(db: Session, work: Work) -> tuple[float | None, str | None]:
+    """Closest other work of the same category, for the geo-duplicate signal.
+
+    The point is rebuilt in SQL from plain floats rather than bound as the
+    ORM's geometry object: psycopg3 cannot adapt a GeoAlchemy2 WKBElement as a
+    parameter and raises "cannot adapt type 'WKBElement'". That aborted the
+    whole facts build, so GEO_DUPLICATE could never fire against a real
+    database - including on the hero work, where it is an 18-point reason.
+
+    A work with no recorded location has no neighbours to compare against; it
+    returns None rather than defaulting to a distance, so a missing location
+    can never look like a duplicate.
+    """
+    if work.location is None:
+        return (None, None)
+
+    lat, lon = _lat_lon(work)
+    if lat is None or lon is None:
+        return (None, None)
+
     row = db.execute(
         text(
             """
+            WITH here AS (
+                SELECT ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography AS g
+            )
             SELECT w.work_code,
-                   ST_Distance(w.location, :loc) AS distance_m
-            FROM works w
+                   ST_Distance(w.location, here.g) AS distance_m
+            FROM works w, here
             WHERE w.id <> :work_id
               AND w.category = :category
               AND w.deleted_at IS NULL
-              AND ST_DWithin(w.location, :loc, :radius)
+              AND w.location IS NOT NULL
+              AND ST_DWithin(w.location, here.g, :radius)
             ORDER BY distance_m ASC
             LIMIT 1
             """
         ),
         {
-            "loc": work.location,
+            "lat": lat,
+            "lon": lon,
             "work_id": work.id,
             "category": work.category,
             "radius": SIMILAR_WORK_RADIUS_M,
         },
     ).first()
     return (float(row.distance_m), row.work_code) if row else (None, None)
+
+
+def _lat_lon(work: Work) -> tuple[float | None, float | None]:
+    """Decode the stored geography into plain floats."""
+    try:
+        from geoalchemy2.shape import to_shape
+
+        point = to_shape(work.location)
+        return float(point.y), float(point.x)
+    except Exception:
+        return (None, None)
 
 
 def _photo_reuse(db: Session, work: Work) -> tuple[float | None, str | None]:
@@ -127,17 +162,29 @@ def _max_photo_offset(db: Session, work: Work) -> float | None:
     """Max distance between any evidence GPS and the work location, in metres."""
     if work.location is None:
         return None
+
+    # Same WKBElement adaptation problem as _nearest_similar_work: the point is
+    # rebuilt in SQL from floats rather than bound as the ORM geometry object.
+    lat, lon = _lat_lon(work)
+    if lat is None or lon is None:
+        return None
+
     row = db.execute(
         text(
             """
-            SELECT MAX(ST_Distance(e.gps, :loc)) AS max_offset_m
+            SELECT MAX(
+                     ST_Distance(
+                       e.gps,
+                       ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography
+                     )
+                   ) AS max_offset_m
             FROM evidence e
             WHERE e.work_id = :work_id
               AND e.gps IS NOT NULL
               AND e.deleted_at IS NULL
             """
         ),
-        {"loc": work.location, "work_id": work.id},
+        {"lat": lat, "lon": lon, "work_id": work.id},
     ).first()
     return round(float(row.max_offset_m), 1) if row and row.max_offset_m else None
 
