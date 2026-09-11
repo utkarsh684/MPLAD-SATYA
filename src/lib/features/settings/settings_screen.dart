@@ -419,7 +419,11 @@ class _ServerGroup extends StatelessWidget {
           iconColor:
               server.reachable ? AppColors.indiaGreen : AppColors.error,
           label: server.reachable ? 'Online' : 'Unreachable',
-          sublabel: AppConfig.apiBaseUrl,
+          sublabel: AppConfig.isCleartext
+              // Only reachable in debug builds, but nobody should demonstrate
+              // over an unencrypted link without being told.
+              ? '${AppConfig.apiBaseUrl}  ·  NOT ENCRYPTED'
+              : AppConfig.apiBaseUrl,
           trailing: IconButton(
             tooltip: 'Re-check',
             icon: const Icon(Icons.refresh_rounded, size: 20),

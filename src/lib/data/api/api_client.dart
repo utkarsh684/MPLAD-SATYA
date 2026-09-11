@@ -34,9 +34,12 @@ class ApiClient {
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _send(() => _http.get(AppConfig.uri(path, query), headers: _headers()));
 
+  /// Un-prefixed endpoints such as /readyz. Uses the cold-start budget because
+  /// this is the call that wakes an idle instance.
   Future<dynamic> getRoot(String path) => _send(
         () => _http.get(AppConfig.rootUri(path), headers: _headers()),
         authenticated: false,
+        timeout: AppConfig.coldStartTimeout,
       );
 
   Future<dynamic> post(String path, {Object? body, Map<String, dynamic>? query}) =>
@@ -70,10 +73,11 @@ class ApiClient {
     Future<http.Response> Function() send, {
     bool authenticated = true,
     bool isRetry = false,
+    Duration? timeout,
   }) async {
     http.Response response;
     try {
-      response = await send().timeout(AppConfig.requestTimeout);
+      response = await send().timeout(timeout ?? AppConfig.requestTimeout);
     } on TimeoutException {
       throw ApiException.timeout();
     } on SocketException catch (e) {
@@ -85,7 +89,8 @@ class ApiClient {
     // One refresh attempt, then give up and surface the session as expired.
     if (response.statusCode == 401 && authenticated && !isRetry) {
       if (await _refresh()) {
-        return _send(send, authenticated: authenticated, isRetry: true);
+        return _send(send,
+            authenticated: authenticated, isRetry: true, timeout: timeout);
       }
       await tokens.clear();
       onSessionExpired?.call();

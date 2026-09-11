@@ -11,23 +11,39 @@ demo mode baked into the app.
 
 ## Point the app at a backend
 
-The API base URL is a build-time constant. There is no in-app server picker,
-so the URL is always visible and never silently wrong.
+The API base URL is compiled in, never read at runtime, so a shipped build
+cannot be redirected after the fact. Targets live in `config/` and are selected
+with Flutter's own `--dart-define-from-file`:
 
 ```bash
-# Android emulator against a local server (10.0.2.2 is the host machine)
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
+flutter run --dart-define-from-file=config/render.json    # deployed API
+flutter run --dart-define-from-file=config/local.json     # emulator -> host
+flutter run --dart-define-from-file=config/hotspot.json   # phone -> laptop
 
-# Physical phone on the demo hotspot, laptop running docker compose
-flutter run --dart-define=API_BASE_URL=http://192.168.1.42:8000
+flutter build apk --release --dart-define-from-file=config/render.json
+```
 
-# Physical phone over USB, no network involved
+| Config | Endpoint |
+|---|---|
+| `render.json` | `https://mplad-satya-hi8x.onrender.com` (the deployed service) |
+| `local.json` | `http://10.0.2.2:8000` — the host as seen from the Android emulator |
+| `hotspot.json` | a laptop on the demo hotspot; **edit the IP** |
+
+`render.json` is also the compiled-in default, so a plain
+`flutter build apk --release` produces a working demo build rather than one
+silently aimed at a loopback address that only exists on a developer's machine.
+
+For a phone over USB with no network at all:
+
+```bash
 adb reverse tcp:8000 tcp:8000
 flutter run --dart-define=API_BASE_URL=http://localhost:8000
-
-# Release build against the deployed API
-flutter build apk --release --dart-define=API_BASE_URL=https://<host>
 ```
+
+The first call after launch gets a 75-second budget rather than the usual 30:
+an idle Render instance cold-starts in roughly 50 s, and the startup handshake
+wakes it while the splash is still up, so the service is warm before an officer
+taps anything.
 
 The current endpoint and server status are shown on the login screen and in
 Settings, so a phone pointed at the wrong host is obvious immediately.
