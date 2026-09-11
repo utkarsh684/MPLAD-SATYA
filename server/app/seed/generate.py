@@ -46,6 +46,20 @@ from app.services import phash as phash_svc
 FIXTURES = Path(__file__).parent / "fixtures"
 SEED = 42
 
+# Commit every N works while scoring, so the exclusive locks taken by wipe()
+# are released regularly instead of being held for the entire run.
+SCORE_COMMIT_EVERY = 50
+
+
+def _progress(message: str) -> None:
+    """Progress goes to stderr so piping stdout stays clean.
+
+    The seeder used to print nothing until it finished. Against a remote
+    database that is twenty minutes of silence, which is indistinguishable
+    from a hang - and was in fact mistaken for one.
+    """
+    print(message, file=sys.stderr, flush=True)
+
 # Bhopal, matching the district shown on the approved screens.
 DISTRICTS = [
     ("Bhopal", "Madhya Pradesh", "451", 23.2599, 77.4126),
@@ -337,10 +351,26 @@ def seed(db: Session, n_works: int = 2000, seed_value: int = SEED) -> dict:
     db.flush()
 
     # --- score everything
+    #
+    # This is the slow phase by a wide margin: score_work runs a dozen queries
+    # per work, so against a remote database it is thousands of round trips.
+    # Held inside one transaction it also keeps the exclusive locks taken by
+    # wipe() for the whole run, which blocks every other reader - including a
+    # deployed API pointed at the same database.
+    #
+    # So it commits in batches and reports progress. The trade-off is
+    # deliberate: a crash mid-scoring now leaves a partially seeded database
+    # rather than nothing, and main() says so explicitly instead of implying
+    # the old all-or-nothing guarantee still holds.
     all_works = db.execute(select(Work)).scalars().all()
-    for work in all_works:
+    total = len(all_works)
+    db.commit()
+
+    for i, work in enumerate(all_works, 1):
         score_work(db, work, trigger="seed")
-    db.flush()
+        if i % SCORE_COMMIT_EVERY == 0 or i == total:
+            db.commit()
+            _progress(f"scored {i}/{total} works")
 
     # --- assignments for the demo field officer (screen 1 counters)
     officer = users["field_officer"]
@@ -431,10 +461,18 @@ def main() -> int:
         counts = seed(db, n_works=args.works, seed_value=args.seed)
         problems = self_check(db)
         if problems:
+            # Scoring commits in batches, so by this point the rows are already
+            # durable and rollback() cannot undo them. Say so plainly rather
+            # than implying the database was left untouched.
             db.rollback()
             print("SEED SELF-CHECK FAILED:", file=sys.stderr)
             for p in problems:
                 print(f"  - {p}", file=sys.stderr)
+            print(
+                "\nThe database holds partially seeded data. Re-run the seeder "
+                "to wipe and rebuild it.",
+                file=sys.stderr,
+            )
             return 1
         db.commit()
         print(f"seeded {counts['works']} works ({counts['planted']} planted); self-check passed")
