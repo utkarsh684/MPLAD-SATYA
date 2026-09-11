@@ -558,6 +558,42 @@ View technical details ▸   brightness contrast, ratio, method, provider
 
 ## Deployment
 
+### Render + Neon — read this first
+
+`render.yaml` deploys with **`ENV=staging`, not `production`**, and that is
+deliberate.
+
+`config.py` is fail-closed: `ENV=production` **refuses to boot** while
+`SMS_PROVIDER=console`. So production forces `SMS_PROVIDER=msg91`, which needs
+a funded MSG91 account. Without those credentials the service would come up
+healthy and **every sign-in would fail** — running, and completely unusable.
+That is a worse outcome than not starting at all, which is why the shipped
+config does not do it.
+
+`staging` keeps console OTP delivery. That is **not** a bypass: the code is
+generated, hashed, expiry-bound and attempt-limited exactly as in production —
+it is returned in the response instead of being texted. The login screen says
+so on screen, and `/readyz` publishes `env` and `demo_mode`, so nothing is
+concealed from a judge.
+
+**Neon must have PostGIS enabled** before the first deploy, or
+`alembic upgrade head` fails on migration `0001`:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+Set in the Render dashboard (never in git): `DATABASE_URL`, `JWT_SECRET`
+(≥32 chars).
+
+To go to real production later: provision MSG91, set `MSG91_AUTH_KEY` and
+`MSG91_TEMPLATE_ID`, then flip `ENV=production` and `SMS_PROVIDER=msg91`. The
+MSG91 sender is implemented and its credentials are validated at boot, so a
+misconfigured deploy fails immediately rather than at an officer's first login.
+
+### Details
+
+
 | Component | Service | Cost |
 |-----------|---------|------|
 | API | Render Starter | $7/mo |

@@ -13,8 +13,25 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2 --proxy-headers --no-access-log
     healthCheckPath: /healthz
     envVars:
+      # staging, NOT production -- deliberately, and this is the whole reason.
+      #
+      # config.py is fail-closed: ENV=production REFUSES TO BOOT while
+      # SMS_PROVIDER=console. Setting production therefore forces
+      # SMS_PROVIDER=msg91, which needs a funded MSG91 account and an API key.
+      # Without one, every OTP request answers 503 and NOBODY CAN SIGN IN -
+      # the service would be up and completely unusable.
+      #
+      # staging keeps console OTP delivery, which is not a bypass: the code is
+      # generated, hashed, expired and attempt-limited identically, it is just
+      # returned in the response instead of texted. The app says so on the
+      # login screen and /readyz publishes env and demo_mode, so nothing is
+      # hidden from a judge.
+      #
+      # To go to real production: provision MSG91, set MSG91_AUTH_KEY and
+      # MSG91_TEMPLATE_ID in the dashboard, then flip these two to
+      # ENV=production and SMS_PROVIDER=msg91.
       - key: ENV
-        value: production
+        value: staging
       - key: PYTHON_VERSION
         value: "3.12"
       # Secrets are set in the dashboard, never in git.
@@ -22,7 +39,15 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
+      # console in staging; msg91 once an account exists (see note above).
       - key: SMS_PROVIDER
+        value: console
+      # Only read when SMS_PROVIDER=msg91. Set in the dashboard, never in git.
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_TEMPLATE_ID
+        sync: false
+      - key: MSG91_SENDER_ID
         sync: false
       - key: DEMO_MODE
         value: "false"

@@ -99,13 +99,79 @@ def issue_otp(db: Session, phone: str, ip: str | None = None) -> tuple[OtpChalle
 
     if settings.sms_provider == "console":
         log.warning("OTP for %s is %s (console delivery)", phone, code)
-    else:  # pragma: no cover - requires a provider account
+    else:
+        _send_sms_msg91(phone, code)
+    return challenge, code
+
+
+def _send_sms_msg91(phone: str, code: str) -> None:
+    """Deliver the OTP over MSG91's transactional SMS API.
+
+    Previously this branch raised unconditionally, so ENV=production - which
+    config.py forces onto a real provider - booted a service on which nobody
+    could ever sign in. The credentials are now checked at startup too, so a
+    misconfigured deploy fails at boot rather than at an officer's first login.
+
+    MSG91 wants a bare 91XXXXXXXXXX, not +91XXXXXXXXXX.
+    """
+    import httpx
+
+    mobile = phone.lstrip("+")
+    payload = {
+        "template_id": settings.msg91_template_id,
+        "short_url": "0",
+        "recipients": [{"mobiles": mobile, "OTP": code}],
+    }
+    if settings.msg91_sender_id:
+        payload["sender"] = settings.msg91_sender_id
+
+    try:
+        response = httpx.post(
+            "https://control.msg91.com/api/v5/flow/",
+            json=payload,
+            headers={
+                "authkey": settings.msg91_auth_key,
+                "Content-Type": "application/json",
+            },
+            timeout=10.0,
+        )
+    except Exception as exc:
+        # Never let the provider's exception text reach the client: it can
+        # carry the auth key.
+        log.exception("MSG91 transport failure for %s", _mask(phone))
         raise ApiError(
-            "SMS_PROVIDER_UNAVAILABLE",
-            "SMS delivery is not configured on this deployment.",
+            "SMS_DELIVERY_FAILED",
+            "We could not send the verification code. Please try again.",
+            status_code=503,
+        ) from exc
+
+    if response.status_code != 200:
+        log.error(
+            "MSG91 rejected the request: status=%s body=%s",
+            response.status_code, response.text[:200],
+        )
+        raise ApiError(
+            "SMS_DELIVERY_FAILED",
+            "We could not send the verification code. Please try again.",
             status_code=503,
         )
-    return challenge, code
+
+    # MSG91 answers 200 with {"type": "error"} for a rejected send, so the
+    # status code alone does not mean the message went out.
+    body = response.json() if response.content else {}
+    if isinstance(body, dict) and body.get("type") == "error":
+        log.error("MSG91 error response: %s", str(body)[:200])
+        raise ApiError(
+            "SMS_DELIVERY_FAILED",
+            "We could not send the verification code. Please try again.",
+            status_code=503,
+        )
+    log.info("OTP dispatched via MSG91 to %s", _mask(phone))
+
+
+def _mask(phone: str) -> str:
+    """Never write a full number to the logs."""
+    return f"{phone[:3]}****{phone[-3:]}" if len(phone) > 6 else "****"
 
 
 def verify_otp(db: Session, request_id: uuid.UUID, phone: str, code: str) -> None:
