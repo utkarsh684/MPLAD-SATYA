@@ -8,7 +8,10 @@ from app.config import settings
 from app.db import Base
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Migrations prefer the direct connection when one is configured; see
+# Settings.database_migration_url.
+MIGRATION_URL = settings.database_migration_url or settings.database_url
+config.set_main_option("sqlalchemy.url", MIGRATION_URL)
 if config.config_file_name:
     fileConfig(config.config_file_name)
 
@@ -35,7 +38,7 @@ def include_object(obj, name, type_, reflected, compare_to):
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.database_url,
+        url=MIGRATION_URL,
         target_metadata=target_metadata,
         literal_binds=True,
         include_object=include_object,

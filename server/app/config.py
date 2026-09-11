@@ -7,7 +7,7 @@ than silently run with `JWT_SECRET="changeme"`.
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     database_url: str
+
+    # Optional direct (session-mode) URL used only for migrations.
+    #
+    # Supabase exposes the transaction pooler on 6543 and direct Postgres on
+    # 5432. Schema changes should go through the direct connection: DDL is
+    # long-running, the pooler adds nothing for a one-shot migration, and
+    # Supabase documents the direct port for exactly this. Falls back to
+    # database_url when unset, which is correct for Neon and for local Postgres.
+    database_migration_url: str = ""
 
     jwt_secret: str
     access_token_days: int = 30
@@ -41,6 +50,29 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 15_000_000
 
     satellite_adapter: Literal["fixture", "bhuvan"] = "fixture"
+
+    @field_validator("database_url", "database_migration_url", mode="after")
+    @classmethod
+    def _use_psycopg3(cls, value: str) -> str:
+        """Accept the URL the provider actually gives you.
+
+        Supabase, Neon and Render all hand out `postgresql://...`, and Heroku
+        still emits the `postgres://` form that SQLAlchemy rejects outright.
+        This project runs psycopg 3, so a bare `postgresql://` resolves to
+        psycopg2 - which is not installed - and the app dies at import with
+        ModuleNotFoundError before any of its own error handling exists.
+
+        Pasting a connection string verbatim is the single most likely thing a
+        deployer will do, so it is made to work rather than documented around.
+        An explicit driver (`+psycopg`, `+asyncpg`) is always left alone.
+        """
+        if not value:
+            return value
+        if value.startswith("postgres://"):
+            value = "postgresql://" + value[len("postgres://"):]
+        if value.startswith("postgresql://"):
+            return "postgresql+psycopg://" + value[len("postgresql://"):]
+        return value
 
     @model_validator(mode="after")
     def _fail_closed_in_production(self):
