@@ -71,10 +71,64 @@ def _progress(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
 
 # Bhopal, matching the district shown on the approved screens.
+# Districts the synthetic works are scattered across.
+#
+# Bhopal must stay first: seed() takes districts[0] as the anchor for the
+# planted demo cases, whose coordinates are fixed relative to it.
+#
+# The spread is national because MPLADS is - every sitting MP gets the same
+# annual entitlement, so a tool that only ever draws one state misrepresents
+# the scheme it claims to watch. Coordinates are the real district
+# headquarters; the works placed around them are generated.
+#
+# The codes are stable identifiers within this dataset and are NOT verified
+# LGD codes. Nothing in the API or the app surfaces them - they exist to give
+# the table a unique key - and inventing authoritative-looking government
+# identifiers for generated data would be the same class of dishonesty this
+# project is built to detect.
 DISTRICTS = [
     ("Bhopal", "Madhya Pradesh", "451", 23.2599, 77.4126),
     ("Sehore", "Madhya Pradesh", "452", 23.2020, 77.0850),
     ("Raisen", "Madhya Pradesh", "453", 23.3300, 77.8100),
+    ("Indore", "Madhya Pradesh", "454", 22.7196, 75.8577),
+    # North
+    ("New Delhi", "Delhi", "101", 28.6139, 77.2090),
+    ("Lucknow", "Uttar Pradesh", "102", 26.8467, 80.9462),
+    ("Varanasi", "Uttar Pradesh", "103", 25.3176, 82.9739),
+    ("Jaipur", "Rajasthan", "104", 26.9124, 75.7873),
+    ("Jodhpur", "Rajasthan", "105", 26.2389, 73.0243),
+    ("Ludhiana", "Punjab", "106", 30.9010, 75.8573),
+    ("Amritsar", "Punjab", "107", 31.6340, 74.8723),
+    ("Dehradun", "Uttarakhand", "108", 30.3165, 78.0322),
+    ("Shimla", "Himachal Pradesh", "109", 31.1048, 77.1734),
+    ("Srinagar", "Jammu and Kashmir", "110", 34.0837, 74.7973),
+    # East
+    ("Patna", "Bihar", "201", 25.5941, 85.1376),
+    ("Ranchi", "Jharkhand", "202", 23.3441, 85.3096),
+    ("Kolkata", "West Bengal", "203", 22.5726, 88.3639),
+    ("Khordha", "Odisha", "204", 20.2961, 85.8245),
+    ("Cuttack", "Odisha", "205", 20.4625, 85.8830),
+    # North-east
+    ("Kamrup Metropolitan", "Assam", "301", 26.1445, 91.7362),
+    ("East Khasi Hills", "Meghalaya", "302", 25.5788, 91.8933),
+    ("Imphal West", "Manipur", "303", 24.8170, 93.9368),
+    ("West Tripura", "Tripura", "304", 23.8315, 91.2868),
+    # West
+    ("Pune", "Maharashtra", "401", 18.5204, 73.8567),
+    ("Nagpur", "Maharashtra", "402", 21.1458, 79.0882),
+    ("Ahmedabad", "Gujarat", "403", 23.0225, 72.5714),
+    ("Surat", "Gujarat", "404", 21.1702, 72.8311),
+    ("North Goa", "Goa", "405", 15.4909, 73.8278),
+    ("Raipur", "Chhattisgarh", "406", 21.2514, 81.6296),
+    # South
+    ("Hyderabad", "Telangana", "501", 17.3850, 78.4867),
+    ("Bengaluru Urban", "Karnataka", "502", 12.9716, 77.5946),
+    ("Mysuru", "Karnataka", "503", 12.2958, 76.6394),
+    ("Chennai", "Tamil Nadu", "504", 13.0827, 80.2707),
+    ("Madurai", "Tamil Nadu", "505", 9.9252, 78.1198),
+    ("Ernakulam", "Kerala", "506", 9.9312, 76.2673),
+    ("Thiruvananthapuram", "Kerala", "507", 8.5241, 76.9366),
+    ("Visakhapatnam", "Andhra Pradesh", "508", 17.6868, 83.2185),
 ]
 
 WARDS = [f"Ward {i}" for i in range(1, 25)]

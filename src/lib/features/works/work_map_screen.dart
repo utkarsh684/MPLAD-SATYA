@@ -241,6 +241,18 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
             options: MapOptions(
               initialCenter: _centroid(located),
               initialZoom: 10,
+              // Frame whatever was actually returned rather than assuming a
+              // district-sized view. Works span the country, and a fixed zoom
+              // of 10 opens about 50 km across - an officer would see an empty
+              // map and reasonably conclude there were no works.
+              initialCameraFit: located.length > 1
+                  ? CameraFit.bounds(
+                      bounds: LatLngBounds.fromPoints([
+                        for (final w in located) LatLng(w.lat!, w.lon!),
+                      ]),
+                      padding: const EdgeInsets.all(40),
+                    )
+                  : null,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
               ),
