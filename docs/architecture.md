@@ -65,7 +65,7 @@ sequenceDiagram
     R->>R: assess(facts) — 33 rules, additive scoring
     R->>D: Persist assessment + reasons + source verdicts
     R-->>A: AssessmentResult
-    A-->>M: Score 78, band RED, 5 reasons
+    A-->>M: Score 80, band RED, 7 reasons
 ```
 
 ## Scoring Flow

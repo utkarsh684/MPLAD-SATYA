@@ -39,7 +39,7 @@ Each rule in `rules.json`:
 
 ## Hamilton Apportionment
 
-The displayed points on each reason sum **exactly** to the gauge number. Without this, rounding produces `23+18+16+15+5 = 77` next to a gauge reading `78`.
+The displayed points on each reason sum **exactly** to the gauge number. Without this, rounding produces `16+14+12+10+10+7+4 = 73` next to a gauge reading `80`.
 
 The `_apportion()` function implements the largest-remainder method:
 1. Scale each reason's contribution proportionally to the target score

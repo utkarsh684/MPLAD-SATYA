@@ -30,7 +30,7 @@ GET  /api/v1/map/works?bbox=77.0,23.0,78.0,24.0
 
 ```
 GET  /api/v1/works/{work_code}/risk
-→ {score: 78, band: "red", reasons: [{code, title, points, explanation, provenance}]}
+→ {score: 80, band: "red", reasons: [{code, title, points, explanation, provenance}]}
 
 GET  /api/v1/works/{work_code}/verification
 → {sources: [{source: "official_record", status, headline}, ...], consistency_pct}

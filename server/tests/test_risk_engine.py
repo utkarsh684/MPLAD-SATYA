@@ -15,41 +15,92 @@ from app.risk.engine import _band_for
 RULES = json.loads((Path(__file__).parent.parent / "app/risk/rules.json").read_text())
 
 
+# The facts the engine actually computes for MP/2026/1142 from a seeded
+# database, taken from that assessment's own inputs_snapshot.
+#
+# This dict used to be hand-written and much thinner, which made the golden
+# test agree with itself rather than with the demo: it omitted the
+# cross-agency photo match and the unit-rate ratio, so two real rules never
+# fired here and the total came to 78 while the deployed service returned 80.
+# A golden test that does not match the running system cannot protect it.
 HERO = {
     "work_code": "MP/2026/1142",
     "category": "road",
     "status": "in_progress",
     "sanctioned_amount_paise": 156_000_000,
+    "estimated_amount_paise": 156_000_000,
     "benchmark_total_paise": 54_000_000,
     "cost_ratio": 156_000_000 / 54_000_000,
+    "cost_revision_ratio": 1.0,
+    "unit_rate_ratio": 156_000_000 / 54_000_000,
     "sanctioned_qty": 100.0,
     "qty_unit": "m",
-    "nearest_similar_work_m": 8.2,
-    "max_photo_similarity": 0.953,
+    "physical_progress_pct": 53,
+    "nearest_similar_work_m": 8.18271215,
+    "nearest_similar_work_code": "MP/2026/1140",
+    "max_photo_similarity": 0.953125,
+    "photo_similarity_match_code": "MP/2026/0987",
+    "photo_shared_across_agencies": True,
     "field_measured_value": 52.0,
+    "field_observed_status": "partial",
     "measurement_shortfall_pct": 48.0,
+    "min_gps_trust": 85,
     "days_overdue": 40,
+    "days_since_sanction": 180,
+    "days_recommend_to_sanction": 30,
+    "days_recommend_to_sanction_abs": 30,
+    "days_since_progress_update": 0,
+    "siblings_same_day_same_agency": 2,
     "satellite_status": "inconclusive",
+    "satellite_confidence": 0.68,
     "satellite_reason": "Imagery at 2.5 m/px cannot resolve a 3 m wide road",
+    "utilisation_pct": 0.0,
+    "iforest_flag": False,
+    "is_prohibited_category": False,
+    "completion_before_sanction": False,
+    "implementing_agency": "Demo Infra Ltd",
+    "tender_threshold_paise": 250_000_000,
+    "work_ceiling_paise": 1_000_000_000,
 }
 
 
-def test_hero_work_scores_exactly_78():
-    """Golden test. This is the number on stage; CI fails before the judges see a drift."""
+def test_hero_work_scores_exactly_80():
+    """Golden test. This is the number on stage; CI fails before a drift ships.
+
+    Verified against the deployed service, which returns the same 80 and the
+    same ordered reasons for this work:
+        ./scripts/verify-hero.sh
+    """
     r = assess(HERO)
-    assert r.score == 78
+    assert r.score == 80
     assert r.band == "red"
     assert r.recommended_action == "hold_field_verify"
     assert r.action_label == "HOLD RELEASE FOR FIELD REVIEW"
 
     scoring = [(x.code, x.points) for x in r.reasons if x.points > 0]
     assert scoring == [
-        ("COST_ANOMALY_BENCHMARK", 24),
-        ("GEO_DUPLICATE", 18),
-        ("IMAGE_REUSE", 16),
+        ("COST_ANOMALY_BENCHMARK", 17),
         ("MEASUREMENT_MISMATCH", 15),
+        ("GEO_DUPLICATE", 13),
+        ("IMAGE_REUSE", 11),
+        ("SAME_PHOTO_CROSS_AGENCY", 11),
+        ("UNIT_RATE_OUTLIER", 8),
         ("TIMELINE_OVERDUE", 5),
     ]
+
+
+def test_hero_category_caps_are_what_redistribute_the_points():
+    """Why the headline reason is 17 and not its raw 24.
+
+    Two anomaly rules fire together against a 25-point category cap, and three
+    fraud rules against 35, so every reason in those categories is scaled
+    down. Pinned because it is the first thing anyone asks when the displayed
+    points do not match a rule's raw value.
+    """
+    r = assess(HERO)
+    assert r.subscores["anomaly"] == 25
+    assert r.subscores["fraud"] == 35
+    assert sum(x.points for x in r.reasons) == r.score
 
 
 def test_hero_explanations_match_the_approved_screen():

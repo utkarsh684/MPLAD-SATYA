@@ -50,7 +50,7 @@ cd server && python -m app.seed.generate --works 2000 --seed 42
 The seeder:
 - Creates 3 districts (Bhopal, Sehore, Raisen)
 - Creates 5 demo users with known phone numbers
-- Plants 6 specific works with known scores (hero = 78)
+- Plants 6 specific works with known scores (hero = 80)
 - Generates ~1994 ordinary works with realistic cost variance
 - Scores all works
 - Runs a self-check asserting planted scores match

@@ -27,7 +27,7 @@ Evidence-based anomaly detection and risk triage for India's MPLAD scheme — �
 
 SATYA is an evidence-based audit layer for the MPLAD scheme. It scores every public work 0–100 by cross-checking four verification sources, and surfaces the reasoning to the officer who decides.
 
-**The score is an investigation priority, not a fraud probability.** A work scoring 78 is not "78% likely to be fraudulent" — it means several checks disagreed with the record, and it should be looked at before a work scoring 20.
+**The score is an investigation priority, not a fraud probability.** A work scoring 80 is not "80% likely to be fraudulent" — it means several checks disagreed with the record, and it should be looked at before a work scoring 20.
 
 SATYA never approves, holds or rejects a fund release. It assembles evidence and recommends; the decision recorded against a release belongs to an authorised officer, with their justification, written to a tamper-evident log alongside the score that was on screen at the time.
 
@@ -207,12 +207,31 @@ graph LR
 
 | # | Reason | Points | Category |
 |---|--------|--------|----------|
-| 1 | Cost 2.9× CPWD benchmark | 24 | Anomaly |
-| 2 | Geo-duplicate 8m from similar work | 18 | Fraud |
-| 3 | Photo 95% match with another work | 16 | Fraud |
-| 4 | Field measurement 52m vs 100m sanctioned | 15 | Field |
-| 5 | Timeline 52 days overdue | 5 | Inefficiency |
-| | **Total** | **78** | **HIGH RISK** |
+| 1 | Cost 2.9× CPWD benchmark | 17 | Anomaly |
+| 2 | Field measurement 52 m vs 100 m sanctioned | 15 | Field |
+| 3 | Geo-duplicate 8.2 m from a similar work | 13 | Fraud |
+| 4 | Photo 95% match with another work | 11 | Fraud |
+| 5 | Same photo under a different agency | 11 | Fraud |
+| 6 | Unit rate 2.9× the scheduled rate | 8 | Anomaly |
+| 7 | Timeline 40 days overdue | 5 | Inefficiency |
+| | **Total** | **80** | **HIGH RISK** |
+| | Satellite cannot resolve this work | 0 | Field *(procedural)* |
+
+Read this back from the live service yourself:
+
+```bash
+./scripts/verify-hero.sh
+```
+
+**Why the headline reason shows 17 and not its raw 24.** Two anomaly rules fire
+together against a 25-point category cap, and three fraud rules against 35, so
+every reason in those categories is scaled down proportionally. The displayed
+points still sum to exactly 80 — that is the apportionment doing its job, and
+it is the first thing anyone asks when a reason's points differ from the rule's
+raw value.
+
+The satellite row is deliberate: a sensor that cannot resolve a 3 m road
+contributes **zero**, and is shown rather than hidden so its silence is visible.
 
 The 33 rules are declarative JSON, evaluated by `simpleeval`. Every assessment stores `engine_version` + `rules_sha256` + `inputs_snapshot` for full reproducibility.
 
@@ -625,7 +644,7 @@ cd server
 pytest -q                                # All 151
 ruff check .                             # Lint
 
-pytest tests/test_risk_engine.py         # Golden hero = 78 · band boundaries
+pytest tests/test_risk_engine.py         # Golden hero = 80 · band boundaries
 pytest tests/test_upload_security.py     # Stored-XSS / file-type rejection
 pytest tests/test_provenance_semantics.py# UNKNOWN is never ZERO
 pytest tests/test_satellite.py           # Detectability, LIVE vs FIXTURE, failure states
@@ -641,8 +660,9 @@ cd src && flutter analyze && flutter test
 ```
 
 **Key invariants tested:**
-- Hero work `MP/2026/1142` scores exactly **78** with 5 specific reasons — CI
-  fails before a judge sees a drift
+- Hero work `MP/2026/1142` scores exactly **80** with 7 specific reasons — CI
+  fails before a judge sees a drift, and `./scripts/verify-hero.sh` reads the
+  same number back from the deployed service over HTTP
 - Reason points always sum to the score (Hamilton apportionment, 400 random works)
 - Band boundaries exact at `0·1·30·31·70·71·99·100`
 - Every rule is reachable — no dead rules
@@ -682,7 +702,7 @@ one you declared first.
 
 ### Found only by running against a real database
 
-`assess()` is a pure function, so the golden test scores `MP/2026/1142` to 78
+`assess()` is a pure function, so the golden test scores `MP/2026/1142`
 without ever touching Postgres. That is why 189 passing tests hid three bugs
 that each made the hero scenario **impossible to persist**. All three surfaced
 within minutes of pointing the seeder at a real Supabase instance:

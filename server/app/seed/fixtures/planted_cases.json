@@ -1,7 +1,7 @@
 [
   {
     "work_code": "MP/2026/1142",
-    "narrative": "DEMO HERO - road, Ward 12, Bhopal",
+    "narrative": "DEMO HERO - road, Ward 12, Bhopal. Seven signals across four categories; anomaly and fraud both hit their caps, so the displayed points are scaled down from the rules' raw values.",
     "title": "Road Construction - Ward 12",
     "category": "road",
     "ward": "Ward 12",
@@ -21,15 +21,38 @@
       "gps_trust": 85
     },
     "expect": {
-      "score": 78,
+      "score": 80,
       "band": "red",
       "recommended_action": "hold_field_verify",
       "reasons": [
-        ["COST_ANOMALY_BENCHMARK", 24],
-        ["GEO_DUPLICATE", 18],
-        ["IMAGE_REUSE", 16],
-        ["MEASUREMENT_MISMATCH", 15],
-        ["TIMELINE_OVERDUE", 5]
+        [
+          "COST_ANOMALY_BENCHMARK",
+          17
+        ],
+        [
+          "MEASUREMENT_MISMATCH",
+          15
+        ],
+        [
+          "GEO_DUPLICATE",
+          13
+        ],
+        [
+          "IMAGE_REUSE",
+          11
+        ],
+        [
+          "SAME_PHOTO_CROSS_AGENCY",
+          11
+        ],
+        [
+          "UNIT_RATE_OUTLIER",
+          8
+        ],
+        [
+          "TIMELINE_OVERDUE",
+          5
+        ]
       ]
     }
   },
@@ -49,7 +72,9 @@
       "days_overdue": 60,
       "gps_trust": 78
     },
-    "expect": {"band": "yellow"}
+    "expect": {
+      "band": "yellow"
+    }
   },
   {
     "work_code": "MP/2026/1128",
@@ -61,8 +86,14 @@
     "sanctioned_qty": 40.0,
     "qty_unit": "nos",
     "implementing_agency": "MP Urban Development Co",
-    "inject": {"cost_multiplier": 1.35, "field_measured": 40.0, "days_overdue": 0},
-    "expect": {"band": "green"}
+    "inject": {
+      "cost_multiplier": 1.35,
+      "field_measured": 40.0,
+      "days_overdue": 0
+    },
+    "expect": {
+      "band": "green"
+    }
   },
   {
     "work_code": "MP/2026/1114",
@@ -74,8 +105,14 @@
     "sanctioned_qty": 300.0,
     "qty_unit": "m",
     "implementing_agency": "PHE Division 1",
-    "inject": {"cost_multiplier": 1.2, "field_measured": 298.0, "days_overdue": 0},
-    "expect": {"band": "green"}
+    "inject": {
+      "cost_multiplier": 1.2,
+      "field_measured": 298.0,
+      "days_overdue": 0
+    },
+    "expect": {
+      "band": "green"
+    }
   },
   {
     "work_code": "MP/2026/1140",
@@ -87,7 +124,10 @@
     "sanctioned_qty": 90.0,
     "qty_unit": "m",
     "implementing_agency": "Demo Infra Ltd",
-    "inject": {"cost_multiplier": 1.32, "days_overdue": 0},
+    "inject": {
+      "cost_multiplier": 1.32,
+      "days_overdue": 0
+    },
     "expect": {}
   },
   {
@@ -100,7 +140,10 @@
     "sanctioned_qty": 120.0,
     "qty_unit": "m",
     "implementing_agency": "Narmada Constructions",
-    "inject": {"cost_multiplier": 1.1, "days_overdue": 0},
+    "inject": {
+      "cost_multiplier": 1.1,
+      "days_overdue": 0
+    },
     "expect": {}
   }
 ]
