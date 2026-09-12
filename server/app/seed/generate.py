@@ -20,11 +20,13 @@ import hashlib
 import json
 import random
 import sys
+import time
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
@@ -49,6 +51,11 @@ SEED = 42
 # Commit every N works while scoring, so the exclusive locks taken by wipe()
 # are released regularly instead of being held for the entire run.
 SCORE_COMMIT_EVERY = 50
+# Passes over the unscored set before giving up. Scoring 2000 works is ~20,000
+# queries over a long-haul link, so a drop partway through is the normal case
+# rather than the exception, and a run that needs a human to restart it is a
+# run that does not finish.
+SCORE_ATTEMPTS = 6
 
 
 def _progress(message: str) -> None:
@@ -427,30 +434,66 @@ def score_pending(db: Session) -> int:
     """Score every work that still has no current assessment.
 
     Scoring 2000 works is roughly 20,000 queries, and over a long-haul link to
-    a managed database one blip ends the run - seen twice here, once as an SSL
-    bad-record-mac and once as "network is unreachable". Without a resume path
-    each attempt restarted from nothing, so a flaky link made seeding
-    impossible rather than merely slow.
+    a managed database one blip ends the run - seen three times here, twice as
+    "network is unreachable" and once as an SSL bad-record-mac. Without a
+    resume path each attempt restarted from nothing, so a flaky link made
+    seeding impossible rather than merely slow.
+
+    Retrying is safe because the work is idempotent: committed batches are
+    durable, a rolled-back tail simply stays unscored, and each pass asks the
+    database afresh what still has no assessment. Nothing is scored twice and
+    nothing is skipped.
 
     This is deliberately NOT part of seed(): that function builds districts,
     rates, users and works from scratch, and re-running it is how you get a
     fresh dataset. This only fills in the scores.
     """
+    before = _unscored(db)
+    if not before:
+        _progress("nothing left to score")
+        return 0
+
+    for attempt in range(1, SCORE_ATTEMPTS + 1):
+        try:
+            _score_once(db)
+            break
+        except OperationalError:
+            # The link died mid-run. Nothing is lost: committed batches are
+            # durable, the rolled-back tail simply stays unscored, and the
+            # next pass re-queries for whatever still has no assessment. That
+            # idempotence is why the retry can be this blunt.
+            db.rollback()
+            if attempt == SCORE_ATTEMPTS:
+                raise
+            wait = min(2 ** attempt, 60)
+            _progress(
+                f"connection lost after {before - _unscored(db)} works; "
+                f"retrying in {wait}s ({attempt}/{SCORE_ATTEMPTS})"
+            )
+            time.sleep(wait)
+
+    return before - _unscored(db)
+
+
+def _unscored(db: Session) -> int:
+    return db.execute(
+        select(func.count()).select_from(Work)
+        .where(Work.current_assessment_id.is_(None))
+    ).scalar_one()
+
+
+def _score_once(db: Session) -> None:
+    """One pass over everything that still has no assessment."""
     pending = db.execute(
         select(Work).where(Work.current_assessment_id.is_(None))
     ).scalars().all()
     total = len(pending)
-    if not total:
-        _progress("nothing left to score")
-        return 0
-
     _progress(f"scoring {total} works that have no assessment yet")
     for i, work in enumerate(pending, 1):
         score_work(db, work, trigger="seed_resume")
         if i % SCORE_COMMIT_EVERY == 0 or i == total:
             db.commit()
             _progress(f"scored {i}/{total}")
-    return total
 
 
 def self_check(db: Session) -> list[str]:
