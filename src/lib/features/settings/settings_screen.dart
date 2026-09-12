@@ -43,7 +43,7 @@ class SettingsScreen extends StatelessWidget {
 
           SettingsGroup(
             title: l10n.appearance,
-            icon: Icons.palette_outlined,
+            icon: Icons.palette_rounded,
             children: [
               SegmentedToggle<ThemeMode>(
                 value: context.watch<ThemeProvider>().themeMode,
@@ -52,15 +52,15 @@ class SettingsScreen extends StatelessWidget {
                   SegmentOption(
                       value: ThemeMode.light,
                       label: l10n.lightMode,
-                      icon: Icons.light_mode_outlined),
+                      icon: Icons.light_mode_rounded),
                   SegmentOption(
                       value: ThemeMode.dark,
                       label: l10n.darkMode,
-                      icon: Icons.dark_mode_outlined),
+                      icon: Icons.dark_mode_rounded),
                   SegmentOption(
                       value: ThemeMode.system,
                       label: l10n.systemDefault,
-                      icon: Icons.brightness_auto_outlined),
+                      icon: Icons.brightness_auto_rounded),
                 ],
               ),
             ],
@@ -72,19 +72,19 @@ class SettingsScreen extends StatelessWidget {
 
           SettingsGroup(
             title: 'Transparency',
-            icon: Icons.visibility_outlined,
+            icon: Icons.visibility_rounded,
             footnote:
                 'Every rule the engine applies is published, along with the '
                 'SHA-256 digest of the exact rulebook this server runs.',
             children: [
               SettingsRow(
-                icon: Icons.rule_folder_outlined,
+                icon: Icons.rule_folder_rounded,
                 label: 'Rulebook',
                 sublabel: 'Conditions, points and provenance for every rule',
                 onTap: () => context.push('/rulebook'),
               ),
               SettingsRow(
-                icon: Icons.school_outlined,
+                icon: Icons.school_rounded,
                 label: 'Replay the guided tour',
                 sublabel: 'Offered again next time the dashboard opens',
                 showDivider: false,
@@ -250,7 +250,7 @@ class _ProfileCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined,
+                      const Icon(Icons.location_on_rounded,
                           size: 13, color: Colors.white70),
                       const SizedBox(width: 4),
                       Text(user!.districtName!,
@@ -380,7 +380,7 @@ class _SyncGroup extends StatelessWidget {
         ),
         for (var i = 0; i < outbox.ops.length; i++)
           SettingsRow(
-            icon: Icons.pending_outlined,
+            icon: Icons.pending_rounded,
             iconColor: AppColors.textTertiary,
             label: outbox.ops[i].label,
             sublabel: outbox.ops[i].lastError,
@@ -388,7 +388,7 @@ class _SyncGroup extends StatelessWidget {
                 i < outbox.ops.length - 1 || outbox.hasRejected,
             trailing: IconButton(
               tooltip: 'Discard',
-              icon: const Icon(Icons.delete_outline, size: 20),
+              icon: const Icon(Icons.delete_outline_rounded, size: 20),
               onPressed: () => outbox.discard(outbox.ops[i].clientUuid),
             ),
           ),
@@ -397,7 +397,7 @@ class _SyncGroup extends StatelessWidget {
         // their submission landed.
         for (var i = 0; i < outbox.rejected.length; i++)
           SettingsRow(
-            icon: Icons.report_problem_outlined,
+            icon: Icons.report_problem_rounded,
             iconColor: AppColors.error,
             label: '${outbox.rejected[i].label} — not accepted',
             sublabel: outbox.rejected[i].lastError ??
@@ -423,15 +423,15 @@ class _ServerGroup extends StatelessWidget {
 
     return SettingsGroup(
       title: 'Server',
-      icon: Icons.dns_outlined,
+      icon: Icons.dns_rounded,
       footnote:
           'The endpoint is fixed at build time, so a device pointed at the '
           'wrong host is visible here rather than silently wrong.',
       children: [
         SettingsRow(
           icon: server.reachable
-              ? Icons.check_circle_outline
-              : Icons.error_outline,
+              ? Icons.check_circle_outline_rounded
+              : Icons.error_outline_rounded,
           iconColor:
               server.reachable ? AppColors.indiaGreen : AppColors.error,
           label: server.reachable ? 'Online' : 'Unreachable',
@@ -459,8 +459,8 @@ class _ServerGroup extends StatelessWidget {
           ),
           SettingsRow(
             icon: status.demoMode
-                ? Icons.science_outlined
-                : Icons.verified_user_outlined,
+                ? Icons.science_rounded
+                : Icons.verified_user_rounded,
             iconColor:
                 status.demoMode ? AppColors.saffronDark : AppColors.indiaGreen,
             label: status.demoMode ? 'Demo mode ON' : 'Demo mode OFF',

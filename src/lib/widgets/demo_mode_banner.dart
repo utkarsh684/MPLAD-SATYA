@@ -40,7 +40,7 @@ class DemoModeBanner extends StatelessWidget {
     if (server.demoMode) {
       return const _Strip(
         color: AppColors.saffron,
-        icon: Icons.science_outlined,
+        icon: Icons.science_rounded,
         text: 'DEMO MODE — server is running on seeded demonstration data',
       );
     }

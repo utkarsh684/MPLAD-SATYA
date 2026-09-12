@@ -93,7 +93,7 @@ class _SatellitePanelState extends State<SatellitePanel> {
           emptyTitle: 'No observations yet',
           emptyMessage:
               'Run one to compare built-up change against reported progress.',
-          emptyIcon: Icons.satellite_alt_outlined,
+          emptyIcon: Icons.satellite_alt_rounded,
           builder: (context, results) => Column(
             children: [
               for (final r in results)
@@ -114,10 +114,10 @@ class _ObservationCard extends StatelessWidget {
   final SatelliteResult result;
 
   (Color, IconData) get _style => switch (result.status) {
-        'match' => (AppColors.indiaGreen, Icons.check_circle_outline),
-        'mismatch' => (AppColors.riskCritical, Icons.error_outline),
-        'inconclusive' => (AppColors.textSecondary, Icons.visibility_off_outlined),
-        _ => (AppColors.textTertiary, Icons.cloud_off_outlined),
+        'match' => (AppColors.indiaGreen, Icons.check_circle_outline_rounded),
+        'mismatch' => (AppColors.riskCritical, Icons.error_outline_rounded),
+        'inconclusive' => (AppColors.textSecondary, Icons.visibility_off_rounded),
+        _ => (AppColors.textTertiary, Icons.cloud_off_rounded),
       };
 
   @override

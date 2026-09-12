@@ -373,11 +373,11 @@ class _LocationStatus extends StatelessWidget {
     }
 
     if (position == null) {
-      return _line(Icons.location_off_outlined, AppColors.error,
+      return _line(Icons.location_off_rounded, AppColors.error,
           'Location unavailable — enable GPS to record an on-site check');
     }
     if (!hasSiteLocation) {
-      return _line(Icons.help_outline, AppColors.textSecondary,
+      return _line(Icons.help_outline_rounded, AppColors.textSecondary,
           'This work has no recorded location to compare against');
     }
 
@@ -390,7 +390,7 @@ class _LocationStatus extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _line(
-          onSite ? Icons.gps_fixed : Icons.gps_not_fixed,
+          onSite ? Icons.gps_fixed_rounded : Icons.gps_not_fixed_rounded,
           onSite ? AppColors.indiaGreen : AppColors.saffronDark,
           text,
         ),
@@ -435,11 +435,11 @@ class _StatusChoices extends StatelessWidget {
 
   // Exactly the server's `observed_status` literal set.
   static const _options = [
-    ('not_started', 'Not started', Icons.block_outlined),
-    ('partial', 'Partially complete', Icons.timelapse_outlined),
-    ('complete', 'Complete', Icons.check_circle_outline),
-    ('different_work', 'Different work here', Icons.swap_horiz_outlined),
-    ('inaccessible', 'Could not access', Icons.do_not_disturb_on_outlined),
+    ('not_started', 'Not started', Icons.block_rounded),
+    ('partial', 'Partially complete', Icons.timelapse_rounded),
+    ('complete', 'Complete', Icons.check_circle_outline_rounded),
+    ('different_work', 'Different work here', Icons.swap_horiz_rounded),
+    ('inaccessible', 'Could not access', Icons.do_not_disturb_on_rounded),
   ];
 
   @override
@@ -484,7 +484,7 @@ class _StatusChoices extends StatelessWidget {
                                   : FontWeight.w500)),
                     ),
                     if (selected == value)
-                      const Icon(Icons.check,
+                      const Icon(Icons.check_rounded,
                           size: 20, color: AppColors.govBlue),
                   ],
                 ),
@@ -535,7 +535,7 @@ class _CapturedStrip extends StatelessWidget {
                         height: 88,
                         width: 88,
                         color: AppColors.surfaceVariant,
-                        child: const Icon(Icons.image_outlined),
+                        child: const Icon(Icons.image_rounded),
                       ),
                     ),
                   ),

@@ -261,7 +261,7 @@ class SettingsRow extends StatelessWidget {
                   const SizedBox(width: 10),
                   trailing!,
                 ] else if (onTap != null)
-                  const Icon(Icons.chevron_right,
+                  const Icon(Icons.chevron_right_rounded,
                       size: 20, color: AppColors.textTertiary),
               ],
             ),

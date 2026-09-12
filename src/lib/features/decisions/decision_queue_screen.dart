@@ -476,14 +476,14 @@ class _ActionOption extends StatelessWidget {
 
   (Color, IconData) get _style => switch (action) {
         DecisionAction.approve =>
-          (AppColors.indiaGreen, Icons.check_circle_outline),
-        DecisionAction.hold => (AppColors.riskCritical, Icons.pan_tool_outlined),
+          (AppColors.indiaGreen, Icons.check_circle_outline_rounded),
+        DecisionAction.hold => (AppColors.riskCritical, Icons.pan_tool_rounded),
         DecisionAction.partialRelease =>
-          (AppColors.saffronDark, Icons.pie_chart_outline),
+          (AppColors.saffronDark, Icons.pie_chart_outline_rounded),
         DecisionAction.fieldReview =>
-          (AppColors.govBlue, Icons.engineering_outlined),
+          (AppColors.govBlue, Icons.engineering_rounded),
         DecisionAction.reAudit =>
-          (AppColors.textSecondary, Icons.fact_check_outlined),
+          (AppColors.textSecondary, Icons.fact_check_rounded),
       };
 
   @override
@@ -517,7 +517,7 @@ class _ActionOption extends StatelessWidget {
                           selected ? FontWeight.w700 : FontWeight.w600,
                       color: selected ? color : null)),
             ),
-            if (selected) Icon(Icons.check, color: color, size: 20),
+            if (selected) Icon(Icons.check_rounded, color: color, size: 20),
           ],
         ),
       ),

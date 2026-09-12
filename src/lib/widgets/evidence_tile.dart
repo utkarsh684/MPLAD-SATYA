@@ -55,7 +55,7 @@ class EvidenceTile extends StatelessWidget {
                       ),
                 errorBuilder: (context, _, __) => Container(
                   color: AppColors.surfaceVariant,
-                  child: const Icon(Icons.broken_image_outlined,
+                  child: const Icon(Icons.broken_image_rounded,
                       color: AppColors.textTertiary),
                 ),
               ),
@@ -67,7 +67,7 @@ class EvidenceTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.gps_fixed, size: 12, color: _trustColor),
+                      Icon(Icons.gps_fixed_rounded, size: 12, color: _trustColor),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -117,7 +117,7 @@ class EvidenceTile extends StatelessWidget {
                 evidence.absoluteUrl,
                 errorBuilder: (context, _, __) => const SizedBox(
                   height: 200,
-                  child: Center(child: Icon(Icons.broken_image_outlined)),
+                  child: Center(child: Icon(Icons.broken_image_rounded)),
                 ),
               ),
             ),

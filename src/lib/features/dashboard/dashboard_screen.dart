@@ -75,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final server = context.read<ServerStatusProvider>().status;
     return [
       TourStep(
-        icon: Icons.insights_outlined,
+        icon: Icons.insights_rounded,
         anchor: _statsKey,
         title: 'What you are looking at',
         body: 'Every number here is computed by the server from real records - '
@@ -83,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'to refresh it.',
       ),
       TourStep(
-        icon: Icons.donut_large_outlined,
+        icon: Icons.donut_large_rounded,
         anchor: _distributionKey,
         title: 'Risk is a priority, not a verdict',
         body: 'Works are banded LOW, REVIEW or HIGH from a 0-100 score. A score '
@@ -104,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // is precisely that question, with no extra state to thread through.
       if (_queueKey.currentContext != null)
         TourStep(
-          icon: Icons.assignment_turned_in_outlined,
+          icon: Icons.assignment_turned_in_rounded,
           anchor: _queueKey,
           title: 'What you have been assigned',
           body: 'Your own verification queue, ordered so the works that most '
@@ -113,14 +113,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               'contributes to the score.',
         ),
       TourStep(
-        icon: Icons.account_circle_outlined,
+        icon: Icons.account_circle_rounded,
         anchor: _profileKey,
         title: 'Your account lives here',
         body: 'Profile, settings, language and the full rulebook are behind '
             'this. The bar along the bottom stays for the work itself.',
       ),
       TourStep(
-        icon: Icons.verified_outlined,
+        icon: Icons.verified_rounded,
         anchor: _serverKey,
         title: 'This is live',
         body: server == null
@@ -176,7 +176,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 8),
           IconButton(
             tooltip: 'Alerts',
-            icon: const Icon(Icons.notifications_outlined),
+            icon: const Icon(Icons.notifications_rounded),
             onPressed: () => context.push('/alerts'),
           ),
           // Identity and configuration live here, keeping the bottom bar
@@ -382,7 +382,7 @@ class _OverviewGrid extends StatelessWidget {
         StatCard(
           title: 'Sanctioned',
           value: overview.totalSanctioned.display,
-          icon: Icons.account_balance_wallet_outlined,
+          icon: Icons.account_balance_wallet_rounded,
           color: AppColors.indiaGreen,
         ),
         StatCard(
@@ -412,7 +412,7 @@ class _RiskDistributionCard extends StatelessWidget {
           child: EmptyState(
             title: 'No assessments yet',
             message: 'Risk scores appear here once works have been assessed.',
-            icon: Icons.donut_large_outlined,
+            icon: Icons.donut_large_rounded,
           ),
         ),
       );
@@ -706,7 +706,7 @@ class _TopRiskSection extends StatelessWidget {
       return const EmptyState(
         title: 'No scored works yet',
         message: 'Once the engine assesses works, the riskiest appear here.',
-        icon: Icons.insights_outlined,
+        icon: Icons.insights_rounded,
       );
     }
 
@@ -790,7 +790,7 @@ class _TopRiskTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.textTertiary),
+            Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
           ],
         ),
       ),

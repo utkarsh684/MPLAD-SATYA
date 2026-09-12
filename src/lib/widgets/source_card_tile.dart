@@ -14,19 +14,19 @@ class SourceCardTile extends StatelessWidget {
   final SourceCard source;
 
   (Color, IconData) get _statusStyle => switch (source.status) {
-        'match' => (AppColors.indiaGreen, Icons.check_circle_outline),
-        'mismatch' => (AppColors.riskCritical, Icons.error_outline),
-        'available' => (AppColors.govBlue, Icons.description_outlined),
-        'inconclusive' => (AppColors.textSecondary, Icons.help_outline),
-        _ => (AppColors.textTertiary, Icons.cloud_off_outlined),
+        'match' => (AppColors.indiaGreen, Icons.check_circle_outline_rounded),
+        'mismatch' => (AppColors.riskCritical, Icons.error_outline_rounded),
+        'available' => (AppColors.govBlue, Icons.description_rounded),
+        'inconclusive' => (AppColors.textSecondary, Icons.help_outline_rounded),
+        _ => (AppColors.textTertiary, Icons.cloud_off_rounded),
       };
 
   IconData get _sourceIcon => switch (source.source) {
-        'official_record' => Icons.account_balance_outlined,
-        'satellite' => Icons.satellite_alt_outlined,
-        'citizen' => Icons.groups_outlined,
-        'field' => Icons.engineering_outlined,
-        _ => Icons.help_outline,
+        'official_record' => Icons.account_balance_rounded,
+        'satellite' => Icons.satellite_alt_rounded,
+        'citizen' => Icons.groups_rounded,
+        'field' => Icons.engineering_rounded,
+        _ => Icons.help_outline_rounded,
       };
 
   @override

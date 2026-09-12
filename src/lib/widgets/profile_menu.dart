@@ -175,7 +175,7 @@ class _ProfileSheet extends StatelessWidget {
             const Divider(height: 1),
 
             _MenuRow(
-              icon: Icons.badge_outlined,
+              icon: Icons.badge_rounded,
               label: 'Profile',
               sublabel: 'Identity, scope and permissions',
               onTap: () {
@@ -190,7 +190,7 @@ class _ProfileSheet extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
               child: Row(
                 children: [
-                  const Icon(Icons.palette_outlined,
+                  const Icon(Icons.palette_rounded,
                       size: 20, color: AppColors.govBlue),
                   const SizedBox(width: 14),
                   Text('Appearance',
@@ -212,17 +212,17 @@ class _ProfileSheet extends StatelessWidget {
                   ButtonSegment(
                     value: ThemeMode.light,
                     label: Text('Light'),
-                    icon: Icon(Icons.light_mode_outlined, size: 16),
+                    icon: Icon(Icons.light_mode_rounded, size: 16),
                   ),
                   ButtonSegment(
                     value: ThemeMode.dark,
                     label: Text('Dark'),
-                    icon: Icon(Icons.dark_mode_outlined, size: 16),
+                    icon: Icon(Icons.dark_mode_rounded, size: 16),
                   ),
                   ButtonSegment(
                     value: ThemeMode.system,
                     label: Text('Auto'),
-                    icon: Icon(Icons.brightness_auto_outlined, size: 16),
+                    icon: Icon(Icons.brightness_auto_rounded, size: 16),
                   ),
                 ],
                 selected: {theme.themeMode},
@@ -232,7 +232,7 @@ class _ProfileSheet extends StatelessWidget {
             const Divider(height: 1),
 
             _MenuRow(
-              icon: Icons.settings_outlined,
+              icon: Icons.settings_rounded,
               label: 'Settings',
               sublabel: 'Language, sync, privacy',
               onTap: () {
@@ -354,7 +354,7 @@ class _MenuRow extends StatelessWidget {
               ),
             ),
             if (color == null)
-              const Icon(Icons.chevron_right,
+              const Icon(Icons.chevron_right_rounded,
                   size: 20, color: AppColors.textTertiary),
           ],
         ),

@@ -10,10 +10,10 @@ import 'app_colors.dart';
 /// driven by the band string the server sent, with the score only as a fallback
 /// for the rare summary that carries a score but no band.
 enum RiskBand {
-  green('green', 'LOW RISK', AppColors.riskLow, Icons.check_circle_outline),
-  yellow('yellow', 'REVIEW REQUIRED', AppColors.riskMedium, Icons.info_outline),
-  red('red', 'HIGH RISK', AppColors.riskCritical, Icons.error_outline),
-  unscored('unscored', 'NOT SCORED', AppColors.textTertiary, Icons.help_outline);
+  green('green', 'LOW RISK', AppColors.riskLow, Icons.check_circle_outline_rounded),
+  yellow('yellow', 'REVIEW REQUIRED', AppColors.riskMedium, Icons.info_outline_rounded),
+  red('red', 'HIGH RISK', AppColors.riskCritical, Icons.error_outline_rounded),
+  unscored('unscored', 'NOT SCORED', AppColors.textTertiary, Icons.help_outline_rounded);
 
   const RiskBand(this.wire, this.defaultLabel, this.color, this.icon);
 

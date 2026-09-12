@@ -79,7 +79,7 @@ class _FieldVerificationScreenState extends State<FieldVerificationScreen> {
                 emptyTitle: 'No assignments',
                 emptyMessage:
                     'Work assigned to you for field verification appears here.',
-                emptyIcon: Icons.assignment_turned_in_outlined,
+                emptyIcon: Icons.assignment_turned_in_rounded,
                 builder: (context, assignments) => ListView(
                   padding:
                       EdgeInsets.all(Responsive.horizontalPadding(context)),
@@ -118,7 +118,7 @@ class _NoLocationBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.location_off_outlined,
+          const Icon(Icons.location_off_rounded,
               size: 18, color: AppColors.saffronDark),
           const SizedBox(width: 10),
           Expanded(
@@ -210,7 +210,7 @@ class _AssignmentCard extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                Icon(Icons.location_on_outlined,
+                Icon(Icons.location_on_rounded,
                     size: 14, color: theme.textTheme.bodySmall?.color),
                 const SizedBox(width: 4),
                 Expanded(
@@ -225,7 +225,7 @@ class _AssignmentCard extends StatelessWidget {
                 if (work.distanceLabel != null)
                   Row(
                     children: [
-                      const Icon(Icons.near_me_outlined,
+                      const Icon(Icons.near_me_rounded,
                           size: 14, color: AppColors.govBlue),
                       const SizedBox(width: 4),
                       Text(work.distanceLabel!,
@@ -260,7 +260,7 @@ class _AssignmentCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                         fontSize: 11, color: AppColors.textTertiary)),
                 const SizedBox(width: 6),
-                const Icon(Icons.chevron_right,
+                const Icon(Icons.chevron_right_rounded,
                     size: 18, color: AppColors.textTertiary),
               ],
             ),

@@ -61,7 +61,7 @@ class WorkCard extends StatelessWidget {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(Icons.location_on_outlined,
+                  Icon(Icons.location_on_rounded,
                       size: 14, color: theme.textTheme.bodySmall?.color),
                   const SizedBox(width: 4),
                   Expanded(
@@ -73,7 +73,7 @@ class WorkCard extends StatelessWidget {
                           color: theme.textTheme.bodySmall?.color),
                     ),
                   ),
-                  Icon(Icons.category_outlined,
+                  Icon(Icons.category_rounded,
                       size: 14, color: theme.textTheme.bodySmall?.color),
                   const SizedBox(width: 4),
                   Flexible(
@@ -91,7 +91,7 @@ class WorkCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.near_me_outlined,
+                    const Icon(Icons.near_me_rounded,
                         size: 14, color: AppColors.govBlue),
                     const SizedBox(width: 4),
                     Text(

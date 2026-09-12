@@ -65,7 +65,7 @@ Future<bool> askToStartTour(BuildContext context) async {
     context: context,
     barrierDismissible: false,
     builder: (context) => AlertDialog(
-      icon: const Icon(Icons.school_outlined,
+      icon: const Icon(Icons.school_rounded,
           size: 36, color: AppColors.govBlue),
       title: const Text('First time here?'),
       content: Text(
@@ -167,21 +167,6 @@ class _TourOverlayState extends State<_TourOverlay> {
               painter: _SpotlightPainter(hole: hole),
             ),
           ),
-          if (hole != null)
-            Positioned(
-              left: hole.left,
-              top: hole.top,
-              width: hole.width,
-              height: hole.height,
-              child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.saffron, width: 2.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
           _buildCard(hole, media),
         ],
       ),
@@ -273,7 +258,9 @@ class _SpotlightPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final dim = Paint()..color = Colors.black.withValues(alpha: 0.72);
+    // Deep enough that the rest of the screen reads as inactive rather than
+    // merely tinted - the step should leave no doubt about where to look.
+    final dim = Paint()..color = Colors.black.withValues(alpha: 0.78);
     final screen = Rect.fromLTWH(0, 0, size.width, size.height);
 
     // Bound to a local because Dart promotes local variables but not public
@@ -284,14 +271,32 @@ class _SpotlightPainter extends CustomPainter {
       return;
     }
 
+    final rrect = RRect.fromRectAndRadius(hole, const Radius.circular(14));
+
     // Even-odd fill punches the rounded rect out of the full-screen rect in a
     // single layer, which keeps the dim uniform rather than double-painting
     // where the shapes would otherwise overlap.
     final path = Path()
       ..addRect(screen)
-      ..addRRect(RRect.fromRectAndRadius(hole, const Radius.circular(12)))
+      ..addRRect(rrect)
       ..fillType = PathFillType.evenOdd;
     canvas.drawPath(path, dim);
+
+    // The edge is lit, not outlined.
+    //
+    // A hard coloured rectangle around a control is the visual language of a
+    // validation error, and an officer being shown their own dashboard for the
+    // first time should not be looking at something that reads as a warning.
+    // A soft falloff says "look here" without saying "this is wrong", and it
+    // survives whatever colours the widget underneath happens to use.
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 10
+        ..color = Colors.white.withValues(alpha: 0.16)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    );
   }
 
   @override

@@ -232,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.sms_failed_outlined,
+                    const Icon(Icons.sms_failed_rounded,
                         size: 16, color: AppColors.saffronDark),
                     const SizedBox(width: 8),
                     Expanded(

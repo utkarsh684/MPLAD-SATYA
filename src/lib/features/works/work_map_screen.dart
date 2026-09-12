@@ -162,7 +162,7 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Search a village, ward or district',
-                prefixIcon: const Icon(Icons.place_outlined),
+                prefixIcon: const Icon(Icons.place_rounded),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 14),
@@ -189,7 +189,7 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
                   final place = _places[i];
                   return ListTile(
                     dense: true,
-                    leading: const Icon(Icons.location_on_outlined, size: 20),
+                    leading: const Icon(Icons.location_on_rounded, size: 20),
                     title: Text(place.shortName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -231,7 +231,7 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
         isEmpty: (works) => works.where((w) => w.hasLocation).isEmpty,
         emptyTitle: 'No mapped works',
         emptyMessage: 'Works in your scope have no location recorded.',
-        emptyIcon: Icons.map_outlined,
+        emptyIcon: Icons.map_rounded,
         builder: (context, works) {
           final located = works.where((w) => w.hasLocation).toList();
           final truncated = works.length >= _markerLimit;
@@ -302,7 +302,7 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                   child: Row(
                     children: [
-                      const Icon(Icons.layers_outlined,
+                      const Icon(Icons.layers_rounded,
                           size: 16, color: Colors.white),
                       const SizedBox(width: 8),
                       Expanded(

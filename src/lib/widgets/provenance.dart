@@ -14,7 +14,7 @@ enum SourceState {
   live('LIVE', AppColors.indiaGreen, Icons.sensors_rounded),
 
   /// Deterministic stand-in data. Never a real observation.
-  fixture('FIXTURE', AppColors.saffronDark, Icons.science_outlined),
+  fixture('FIXTURE', AppColors.saffronDark, Icons.science_rounded),
 
   /// Computed by SATYA from data we hold, e.g. our own uploads.
   local('LOCAL', AppColors.govBlue, Icons.storage_rounded),
@@ -26,7 +26,7 @@ enum SourceState {
   demoAdapter('DEMO ADAPTER', AppColors.saffronDark, Icons.cable_rounded),
 
   /// The source ran but could not decide either way.
-  inconclusive('INCONCLUSIVE', AppColors.textSecondary, Icons.help_outline),
+  inconclusive('INCONCLUSIVE', AppColors.textSecondary, Icons.help_outline_rounded),
 
   /// The source could not be reached, or returned nothing usable.
   unavailable('UNAVAILABLE', AppColors.textTertiary, Icons.cloud_off_rounded),
@@ -71,32 +71,46 @@ class ProvenanceChip extends StatelessWidget {
 
     return Semantics(
       label: 'Source: $text',
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: dense ? 7 : 9,
-          vertical: dense ? 2 : 4,
-        ),
-        decoration: BoxDecoration(
-          color: state.color.withValues(alpha: isDark ? 0.20 : 0.10),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: state.color.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // A filled dot plus an icon: never colour alone.
-            Icon(state.icon, size: dense ? 10 : 12, color: state.color),
-            SizedBox(width: dense ? 4 : 5),
-            Text(
-              text,
-              style: GoogleFonts.inter(
-                fontSize: dense ? 9 : 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.4,
-                color: state.color,
+      // Truncating provenance would be the wrong kind of tidy, so the full
+      // string stays reachable by long-press and by screen reader even when
+      // the chip has to cut it.
+      child: Tooltip(
+        message: text,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: dense ? 7 : 9,
+            vertical: dense ? 2 : 4,
+          ),
+          decoration: BoxDecoration(
+            color: state.color.withValues(alpha: isDark ? 0.20 : 0.10),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: state.color.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // A filled dot plus an icon: never colour alone.
+              Icon(state.icon, size: dense ? 10 : 12, color: state.color),
+              SizedBox(width: dense ? 4 : 5),
+              // Flexible, not bare: source names are long ("CPWD Delhi
+              // Schedule of Rates 2023, item 4.2"), and an unconstrained Text
+              // in a min-size Row demands its full natural width and runs off
+              // the screen. On a 320px phone this overflowed by 414 pixels.
+              Flexible(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: dense ? 9 : 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: state.color,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -159,7 +173,11 @@ class ProvenanceBlock extends StatelessWidget {
                       letterSpacing: 0.8,
                       color: AppColors.textTertiary)),
               const Spacer(),
-              ProvenanceChip(state: state, detail: source, dense: true),
+              // Flexible so the chip is handed a bound to shrink into; with a
+              // Spacer beside it there is otherwise no width left to give.
+              Flexible(
+                child: ProvenanceChip(state: state, detail: source, dense: true),
+              ),
             ],
           ),
           if (isIndependent != null) ...[

@@ -228,7 +228,7 @@ class _SourceCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  independent! ? Icons.check_circle_outline : Icons.cancel_outlined,
+                  independent! ? Icons.check_circle_outline_rounded : Icons.cancel_rounded,
                   size: 13,
                   color: independent!
                       ? AppColors.indiaGreen

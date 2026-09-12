@@ -18,7 +18,7 @@ class AsyncView<T> extends StatelessWidget {
     this.isEmpty,
     this.emptyTitle = 'Nothing here yet',
     this.emptyMessage,
-    this.emptyIcon = Icons.inbox_outlined,
+    this.emptyIcon = Icons.inbox_rounded,
   });
 
   final Future<T>? future;
@@ -147,7 +147,7 @@ class EmptyState extends StatelessWidget {
     super.key,
     required this.title,
     this.message,
-    this.icon = Icons.inbox_outlined,
+    this.icon = Icons.inbox_rounded,
     this.onRetry,
   });
 

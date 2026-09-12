@@ -53,7 +53,7 @@ class _EsakshiPanelState extends State<EsakshiPanel> {
           return const EmptyState(
             title: 'No official record',
             message: 'This work has no matching eSAKSHI entry.',
-            icon: Icons.no_accounts_outlined,
+            icon: Icons.no_accounts_rounded,
           );
         }
         return Column(
@@ -164,7 +164,7 @@ class _Check extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(ok ? Icons.check : Icons.close, size: 13, color: color),
+          Icon(ok ? Icons.check_rounded : Icons.close_rounded, size: 13, color: color),
           const SizedBox(width: 5),
           Text(label,
               style: GoogleFonts.inter(

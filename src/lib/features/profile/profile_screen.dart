@@ -47,7 +47,7 @@ class ProfileScreen extends StatelessWidget {
 
           SettingsGroup(
             title: 'Scope',
-            icon: Icons.map_outlined,
+            icon: Icons.map_rounded,
             footnote:
                 'The server restricts every list and decision to this scope. '
                 'Widening it is not something the app can do.',
@@ -58,7 +58,7 @@ class ProfileScreen extends StatelessWidget {
                 sublabel: user.districtName ?? 'Not assigned',
               ),
               SettingsRow(
-                icon: Icons.account_balance_outlined,
+                icon: Icons.account_balance_rounded,
                 label: 'Department',
                 sublabel: 'Ministry of Statistics & Programme Implementation',
                 showDivider: false,
@@ -70,7 +70,7 @@ class ProfileScreen extends StatelessWidget {
 
           SettingsGroup(
             title: 'Session',
-            icon: Icons.verified_user_outlined,
+            icon: Icons.verified_user_rounded,
             children: [
               SettingsRow(
                 icon: outbox.hasPending
@@ -190,7 +190,7 @@ class _PermissionsGroup extends StatelessWidget {
 
     return SettingsGroup(
       title: 'Permissions',
-      icon: Icons.key_outlined,
+      icon: Icons.key_rounded,
       footnote:
           'Granted by role. The server enforces these independently — the app '
           'only hides what it knows you cannot do.',
@@ -198,8 +198,8 @@ class _PermissionsGroup extends StatelessWidget {
         for (var i = 0; i < permissions.length; i++)
           SettingsRow(
             icon: permissions[i].$2
-                ? Icons.check_circle_outline
-                : Icons.remove_circle_outline,
+                ? Icons.check_circle_outline_rounded
+                : Icons.remove_circle_outline_rounded,
             iconColor: permissions[i].$2
                 ? AppColors.indiaGreen
                 : AppColors.textTertiary,

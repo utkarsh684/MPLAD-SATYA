@@ -276,7 +276,7 @@ class _Header extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.location_on_outlined,
+                  Icon(Icons.location_on_rounded,
                       size: 16, color: theme.textTheme.bodySmall?.color),
                   const SizedBox(width: 8),
                   Expanded(
@@ -410,8 +410,8 @@ class _ScoreBlock extends StatelessWidget {
           children: [
             Icon(
               risk.consistencyPct == null
-                  ? Icons.help_outline
-                  : Icons.fact_check_outlined,
+                  ? Icons.help_outline_rounded
+                  : Icons.fact_check_rounded,
               size: 16,
               color: risk.consistencyPct == null
                   ? AppColors.textTertiary
@@ -450,7 +450,7 @@ class _ReasonsSection extends StatelessWidget {
       return const EmptyState(
         title: 'No risk signals fired',
         message: 'The engine found nothing to flag on this work.',
-        icon: Icons.verified_outlined,
+        icon: Icons.verified_rounded,
       );
     }
 
@@ -595,7 +595,7 @@ class _ReasonCardState extends State<_ReasonCard> {
                   AnimatedRotation(
                     turns: _expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 180),
-                    child: Icon(Icons.keyboard_arrow_down,
+                    child: Icon(Icons.keyboard_arrow_down_rounded,
                         color: theme.textTheme.bodySmall?.color),
                   ),
                 ],
@@ -799,7 +799,7 @@ class _EvidenceSection extends StatelessWidget {
           const EmptyState(
             title: 'No evidence uploaded',
             message: 'Photos captured during field verification appear here.',
-            icon: Icons.photo_camera_back_outlined,
+            icon: Icons.photo_camera_back_rounded,
           )
         else
           SizedBox(
@@ -840,7 +840,7 @@ class _ProvenanceFooter extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.verified_user_outlined,
+              Icon(Icons.verified_user_rounded,
                   size: 14, color: theme.textTheme.bodySmall?.color),
               const SizedBox(width: 6),
               Text('How this score was produced',

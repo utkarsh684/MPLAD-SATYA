@@ -78,7 +78,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         actions: [
           IconButton(
             tooltip: 'Rulebook',
-            icon: const Icon(Icons.rule_folder_outlined),
+            icon: const Icon(Icons.rule_folder_rounded),
             onPressed: () => context.push('/rulebook'),
           ),
         ],
@@ -266,7 +266,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     'SHA-256 hash chain. Re-verify it here at any time.',
                 child: OutlinedButton.icon(
                   onPressed: _verifyChain,
-                  icon: const Icon(Icons.verified_user_outlined, size: 18),
+                  icon: const Icon(Icons.verified_user_rounded, size: 18),
                   label: const Text('Verify audit chain'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(46),
