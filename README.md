@@ -511,9 +511,14 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
 adb reverse tcp:8000 tcp:8000
 flutter run --dart-define=API_BASE_URL=http://localhost:8000
 
-# Release APK
-flutter build apk --release --dart-define=API_BASE_URL=https://<host>
+# Release APK - the form that is actually verified, against config/render.json
+flutter build apk --release --dart-define-from-file=config/render.json
 ```
+
+That build produces `build/app/outputs/flutter-apk/app-release.apk` (61 MB)
+with the endpoint compiled in. It is signed with the **Android debug key**,
+because the project carries no release signing config: it sideloads and runs,
+but it cannot be published, and a rebuild elsewhere gets a different key.
 
 The API endpoint is a **build-time constant** — there is no in-app server
 picker, and the endpoint plus live server status is shown on the login screen
@@ -699,7 +704,8 @@ one you declared first.
 | **GPS can be spoofed** | Mock-location is detected and flagged into the trust score, but a determined spoof on a rooted device is not fully defeated |
 | **Tokens in `SharedPreferences`** | Readable on a rooted device. `flutter_secure_storage` is the upgrade path; access tokens are short-lived |
 | **Rejected sync items are not auto-retried** | By design — the server will never accept them. They are surfaced in Settings rather than dropped, and must be re-recorded manually |
-| **APK not built** | No Flutter, Dart, JDK, Android SDK or adb in this environment (`command -v` returns nothing for all six). `flutter analyze` / `flutter test` / `flutter build apk` have **not** been run; the APK is **NOT VERIFIED**. Dart is validated by syntax, import-resolution and contract checks only |
+| **APK is debug-signed** | The release APK builds (61 MB, `com.mpladsatya.mplad_satya` 1.0.0, targetSdk 36) and carries the Render URL compiled in, but there is no release signing config, so it is signed with the Android debug key. Sideloads and runs; cannot go to Play, and a rebuild on another machine produces a different key, so an in-place upgrade fails |
+| **APK never run on a physical device** | `flutter analyze` (clean), `flutter test` (38 passed) and `flutter build apk --release` (succeeds) have all been run. No Android device or emulator was available, so nothing here proves the app behaves correctly once installed |
 | **Bhuvan live returns UNAVAILABLE** | The endpoint is reachable and the request genuinely succeeds, but the public service serves thematic vector layers rather than per-location imagery. Needs a registered ISRO API key |
 | **Only English and Hindi** | The other seven language maps are 11–25 % complete and are deliberately withheld from the picker. `test/localization_test.dart` fails the build if the advertised list runs ahead of the translations |
 
