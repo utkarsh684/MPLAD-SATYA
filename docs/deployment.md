@@ -45,6 +45,10 @@ After deploy, seed the demo data:
 ```bash
 # Via Render shell or one-off job
 cd server && python -m app.seed.generate --works 2000 --seed 42
+
+# Scoring is the long half. A dropped connection leaves the works in
+# place but unscored - re-run this until it reports nothing pending:
+python -m app.seed.generate --resume
 ```
 
 The seeder:

@@ -382,6 +382,7 @@ cd MPLAD-SATYA/server
 # Install dependencies
 pip install uv
 uv sync
+source .venv/bin/activate   # every command below needs this
 
 # Configure
 cp .env.example .env
@@ -391,13 +392,15 @@ cp .env.example .env
 docker compose up -d db
 alembic upgrade head
 python -m app.seed.generate --works 2000 --seed 42
+# Scoring 2000 works takes a while. If the connection drops partway,
+# re-run with --resume; it scores only what is still unscored.
 
 # Run
 uvicorn app.main:app --reload --port 8000
 
 # Test
 pytest tests/ -q
-# 151 passed
+# 220 passed
 ```
 
 ### Demo Logins
