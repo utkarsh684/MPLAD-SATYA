@@ -397,6 +397,36 @@ def seed(db: Session, n_works: int = 2000, seed_value: int = SEED) -> dict:
     return {"works": len(all_works), "planted": len(planted), "users": len(DEMO_USERS)}
 
 
+def score_pending(db: Session) -> int:
+    """Score every work that still has no current assessment.
+
+    Scoring 2000 works is roughly 20,000 queries, and over a long-haul link to
+    a managed database one blip ends the run - seen twice here, once as an SSL
+    bad-record-mac and once as "network is unreachable". Without a resume path
+    each attempt restarted from nothing, so a flaky link made seeding
+    impossible rather than merely slow.
+
+    This is deliberately NOT part of seed(): that function builds districts,
+    rates, users and works from scratch, and re-running it is how you get a
+    fresh dataset. This only fills in the scores.
+    """
+    pending = db.execute(
+        select(Work).where(Work.current_assessment_id.is_(None))
+    ).scalars().all()
+    total = len(pending)
+    if not total:
+        _progress("nothing left to score")
+        return 0
+
+    _progress(f"scoring {total} works that have no assessment yet")
+    for i, work in enumerate(pending, 1):
+        score_work(db, work, trigger="seed_resume")
+        if i % SCORE_COMMIT_EVERY == 0 or i == total:
+            db.commit()
+            _progress(f"scored {i}/{total}")
+    return total
+
+
 def self_check(db: Session) -> list[str]:
     """Assert every planted case still produces its documented result."""
     problems: list[str] = []
@@ -452,10 +482,27 @@ def main() -> int:
     parser.add_argument("--works", type=int, default=2000)
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--keep", action="store_true", help="do not wipe first")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="score works left unscored by an interrupted run; builds nothing new",
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
     try:
+        if args.resume:
+            scored = score_pending(db)
+            problems = self_check(db)
+            if problems:
+                print("SELF-CHECK FAILED after resume:", file=sys.stderr)
+                for p in problems:
+                    print(f"  - {p}", file=sys.stderr)
+                return 1
+            db.commit()
+            print(f"resumed: scored {scored} works; self-check passed")
+            return 0
+
         if not args.keep:
             wipe(db)
         counts = seed(db, n_works=args.works, seed_value=args.seed)
