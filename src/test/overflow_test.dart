@@ -11,7 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mplad_satya/data/models/money.dart';
 import 'package:mplad_satya/data/models/work.dart';
+import 'package:mplad_satya/data/models/evidence.dart';
 import 'package:mplad_satya/data/models/risk.dart';
+import 'package:mplad_satya/widgets/evidence_tile.dart';
 import 'package:mplad_satya/widgets/provenance.dart';
 import 'package:mplad_satya/widgets/source_card_tile.dart';
 import 'package:mplad_satya/widgets/work_card.dart';
@@ -139,6 +141,44 @@ void main() {
             'reachable but serves thematic layers rather than per-site tiles',
             status: 'unavailable',
           ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Evidence tiles on a 320px screen', () {
+    Evidence ev({List<String> flags = const []}) => Evidence(
+          id: 'e1',
+          workId: 'w1',
+          source: 'field_officer',
+          kind: 'photo',
+          storageUrl: 'https://example.invalid/e1.jpg',
+          sha256: 'a' * 64,
+          facesBlurred: 2,
+          gpsTrust: 40,
+          gpsFlags: flags,
+          capturedAt: DateTime.utc(2026, 9, 12, 11, 4),
+          phashHex: 'ff00ab12cd34ef56',
+        );
+
+    testWidgets('a clean capture fits', (tester) async {
+      await _pumpAt(tester, EvidenceTile(evidence: ev()));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('every spoof flag at once still fits', (tester) async {
+      // The worst real case: a photo that tripped every GPS heuristic.
+      await _pumpAt(
+        tester,
+        EvidenceTile(
+          evidence: ev(flags: const [
+            'mock_location_flag',
+            'gps_offset_41207m',
+            'accuracy_implausibly_precise',
+            'capture_upload_skew_9d',
+            'work_location_unknown',
+          ]),
         ),
       );
       expect(tester.takeException(), isNull);
