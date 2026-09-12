@@ -14,6 +14,7 @@ import '../../providers/server_status_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/settings_controls.dart';
+import '../../widgets/tutorial.dart';
 
 /// Real account, real sync state, real server identity.
 ///
@@ -81,7 +82,22 @@ class SettingsScreen extends StatelessWidget {
                 label: 'Rulebook',
                 sublabel: 'Conditions, points and provenance for every rule',
                 onTap: () => context.push('/rulebook'),
+              ),
+              SettingsRow(
+                icon: Icons.school_outlined,
+                label: 'Replay the guided tour',
+                sublabel: 'Offered again next time the dashboard opens',
                 showDivider: false,
+                onTap: () async {
+                  await TourPreference.reset();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'The tour will be offered again on the dashboard.'),
+                    ),
+                  );
+                },
               ),
             ],
           ),

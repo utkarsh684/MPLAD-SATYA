@@ -130,9 +130,21 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.white,
-        indicatorColor: AppColors.govBlueSurface,
+        indicatorColor: AppColors.govBlue,
         surfaceTintColor: Colors.transparent,
         elevation: 2,
+        height: 68,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        // The selected ICON had no theme, so it fell back to Material's grey
+        // while the label beside it was blue - a grey icon sitting inside a
+        // tinted pill under blue text. That mismatch is what made the
+        // selection read as broken rather than chosen.
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(size: 24, color: Colors.white);
+          }
+          return const IconThemeData(size: 24, color: AppColors.textSecondary);
+        }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.govBlue);
@@ -294,9 +306,18 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,
-        indicatorColor: AppColors.navyMedium,
+        indicatorColor: AppColors.govBlue,
         surfaceTintColor: Colors.transparent,
         elevation: 2,
+        height: 68,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(size: 24, color: Colors.white);
+          }
+          return const IconThemeData(
+              size: 24, color: AppColors.textOnDarkSecondary);
+        }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.govBlueLight);

@@ -64,27 +64,40 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  /// The nav mirrors the server's RBAC: a field officer has no decision queue,
-  /// and a citizen has neither. Hiding what the caller cannot do keeps the app
-  /// honest; the server still enforces every boundary.
+  /// Exactly five destinations, whoever is signed in.
+  ///
+  /// This used to vary with role: a citizen saw four, a field officer five and
+  /// a district officer six. Six is past the Material maximum, so the labels
+  /// crushed together, and a bar that changes length between accounts is
+  /// impossible to build muscle memory against.
+  ///
+  /// Settings is deliberately absent - it lives in the top-right profile menu,
+  /// and having it in both places wasted an operational slot on something
+  /// nobody opens mid-task. The freed slot goes to the map, which was
+  /// previously reachable only through an icon buried in the works app bar.
+  ///
+  /// Slot three is the one that changes: it is whatever that role actually
+  /// does all day. Everything still hidden here remains enforced server-side.
   List<_NavDestination> _destinationsFor(AppUser? user, AppLocalizations l10n) {
-    final items = <_NavDestination>[
+    final _NavDestination roleSlot;
+    if (user?.canDecide ?? false) {
+      roleSlot = _NavDestination('Decisions', Icons.gavel_rounded, '/decisions');
+    } else if (user != null && user.role != 'citizen') {
+      roleSlot = _NavDestination(
+          l10n.fieldVerification, Icons.camera_alt_rounded, '/field');
+    } else {
+      // A citizen has neither queue; alerts are their equivalent entry point.
+      roleSlot =
+          _NavDestination('Alerts', Icons.notifications_rounded, '/alerts');
+    }
+
+    return [
       _NavDestination(l10n.dashboard, Icons.dashboard_rounded, '/dashboard'),
       _NavDestination(l10n.projects, Icons.folder_special_rounded, '/works'),
+      roleSlot,
+      _NavDestination('Map', Icons.map_rounded, '/map'),
+      _NavDestination(l10n.reports, Icons.bar_chart_rounded, '/reports'),
     ];
-
-    if (user?.canDecide ?? false) {
-      items.add(_NavDestination(
-          'Decisions', Icons.gavel_rounded, '/decisions'));
-    }
-    if (user != null && user.role != 'citizen') {
-      items.add(_NavDestination(
-          l10n.fieldVerification, Icons.camera_alt_rounded, '/field'));
-    }
-
-    items.add(_NavDestination(l10n.reports, Icons.bar_chart_rounded, '/reports'));
-    items.add(_NavDestination(l10n.settings, Icons.settings_rounded, '/settings'));
-    return items;
   }
 }
 

@@ -27,6 +27,15 @@ class WorkMapScreen extends StatefulWidget {
 }
 
 class _WorkMapScreenState extends State<WorkMapScreen> {
+  /// Markers rendered at once.
+  ///
+  /// Each marker is a decorated container, so a few thousand of them stutter
+  /// badly on a mid-range phone. The cap is also a truthfulness problem, not
+  /// only a performance one: the screen previously drew the first 500 of 2000
+  /// works with nothing to say so, and an officer would reasonably read an
+  /// empty area as "no works here" rather than "not loaded".
+  static const int _markerLimit = 300;
+
   final _mapController = MapController();
   final _searchController = TextEditingController();
   late Future<List<WorkSummary>> _future;
@@ -40,7 +49,7 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
   @override
   void initState() {
     super.initState();
-    _future = context.read<WorksRepository>().mapWorks();
+    _future = context.read<WorksRepository>().mapWorks(limit: _markerLimit);
     _locate();
   }
 
@@ -217,15 +226,17 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
   Widget _buildMap() {
     return AsyncView<List<WorkSummary>>(
         future: _future,
-        onRetry: () => setState(
-            () => _future = context.read<WorksRepository>().mapWorks()),
+        onRetry: () => setState(() => _future =
+            context.read<WorksRepository>().mapWorks(limit: _markerLimit)),
         isEmpty: (works) => works.where((w) => w.hasLocation).isEmpty,
         emptyTitle: 'No mapped works',
         emptyMessage: 'Works in your scope have no location recorded.',
         emptyIcon: Icons.map_outlined,
         builder: (context, works) {
           final located = works.where((w) => w.hasLocation).toList();
-          return FlutterMap(
+          final truncated = works.length >= _markerLimit;
+          return Stack(children: [
+          FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _centroid(located),
@@ -276,7 +287,41 @@ class _WorkMapScreenState extends State<WorkMapScreen> {
                 ],
               ),
             ],
-          );
+          ),
+          if (truncated)
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: Material(
+                elevation: 3,
+                borderRadius: BorderRadius.circular(10),
+                color: AppColors.saffron.withValues(alpha: 0.95),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.layers_outlined,
+                          size: 16, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Showing the first ${located.length} works. Search a '
+                          'place or use the works list to find a specific one.',
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              height: 1.35,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ]);
         },
     );
   }

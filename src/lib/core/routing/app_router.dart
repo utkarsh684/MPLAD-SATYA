@@ -78,6 +78,17 @@ class AppRouter {
                 path: '/reports',
                 builder: (context, state) => const ReportsScreen(),
               ),
+              // Inside the shell: both are bottom-bar destinations, so they
+              // must keep the bar visible. Opening a tab full-screen strands
+              // the officer with only the system back gesture to escape.
+              GoRoute(
+                path: '/map',
+                builder: (context, state) => const WorkMapScreen(),
+              ),
+              GoRoute(
+                path: '/alerts',
+                builder: (context, state) => const AlertsScreen(),
+              ),
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
@@ -90,14 +101,6 @@ class AppRouter {
             builder: (context, state) => WorkDetailScreen(
               workCode: Uri.decodeComponent(state.pathParameters['code']!),
             ),
-          ),
-          GoRoute(
-            path: '/map',
-            builder: (context, state) => const WorkMapScreen(),
-          ),
-          GoRoute(
-            path: '/alerts',
-            builder: (context, state) => const AlertsScreen(),
           ),
           GoRoute(
             path: '/rulebook',

@@ -15,10 +15,12 @@ import '../../data/repositories/field_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/outbox_provider.dart';
+import '../../providers/server_status_provider.dart';
 import '../../widgets/async_view.dart';
 import '../../widgets/profile_menu.dart';
 import '../../widgets/stat_card.dart';
 import '../../widgets/sync_status_indicator.dart';
+import '../../widgets/tutorial.dart';
 
 /// Every number on this screen is computed by the server. Nothing is scaled,
 /// padded or invented for display.
@@ -32,10 +34,90 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late Future<_DashboardData> _future;
 
+  // Anchors for the guided tour. They point at the real widgets, so the tour
+  // spotlights live data rather than a mock-up of it.
+  final _queueKey = GlobalKey();
+  final _statsKey = GlobalKey();
+  final _distributionKey = GlobalKey();
+  final _topRiskKey = GlobalKey();
+  final _profileKey = GlobalKey();
+  final _serverKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     _future = _load();
+    _maybeOfferTour();
+  }
+
+  /// Offered once per install, after the first successful sign-in.
+  ///
+  /// Waits for the dashboard's first real data before asking: a tour that
+  /// spotlights empty boxes teaches nothing, and starting it mid-load would
+  /// measure anchors that have not been laid out yet.
+  Future<void> _maybeOfferTour() async {
+    if (await TourPreference.hasSeen()) return;
+    try {
+      await _future;
+    } catch (_) {
+      // Could not load; a tour over an error screen would be worse than none.
+      return;
+    }
+    if (!mounted) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    if (await askToStartTour(context) && mounted) {
+      await runTour(context, _tourSteps());
+    }
+  }
+
+  List<TourStep> _tourSteps() {
+    final server = context.read<ServerStatusProvider>().status;
+    return [
+      TourStep(
+        icon: Icons.insights_outlined,
+        anchor: _statsKey,
+        title: 'What you are looking at',
+        body: 'Every number here is computed by the server from real records - '
+            'nothing is padded or sampled for display. Pull down on any screen '
+            'to refresh it.',
+      ),
+      TourStep(
+        icon: Icons.donut_large_outlined,
+        anchor: _distributionKey,
+        title: 'Risk is a priority, not a verdict',
+        body: 'Works are banded LOW, REVIEW or HIGH from a 0-100 score. A score '
+            'of 78 does not mean "78% fraud" - it means several checks '
+            'disagreed with the record, so look at it before one scoring 20.',
+      ),
+      TourStep(
+        icon: Icons.warning_amber_rounded,
+        anchor: _topRiskKey,
+        title: 'Start here',
+        body: 'The highest-scoring works. Tap one to see exactly why it scored '
+            'what it did: each reason carries the points it contributed, and '
+            'they add up to the score so you can check the arithmetic.',
+      ),
+      TourStep(
+        icon: Icons.account_circle_outlined,
+        anchor: _profileKey,
+        title: 'Your account lives here',
+        body: 'Profile, settings, language and the full rulebook are behind '
+            'this. The bar along the bottom stays for the work itself.',
+      ),
+      TourStep(
+        icon: Icons.verified_outlined,
+        anchor: _serverKey,
+        title: 'This is live',
+        body: server == null
+            ? 'The app is talking to the SATYA server now. Settings shows which '
+                'server, and whether it is reachable.'
+            : 'Connected to the ${server.env} server, engine '
+                '${server.engineVersion}, rulebook ${server.shortRulesSha}. '
+                'That digest identifies the exact rules behind every score on '
+                'this screen - Settings shows it at any time.',
+      ),
+    ];
   }
 
   Future<_DashboardData> _load() async {
@@ -76,7 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text(l10n.districtOverview),
         actions: [
-          const SyncStatusIndicator(),
+          SyncStatusIndicator(key: _serverKey),
           const SizedBox(width: 8),
           IconButton(
             tooltip: 'Alerts',
@@ -85,7 +167,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           // Identity and configuration live here, keeping the bottom bar
           // entirely operational.
-          const ProfileMenuButton(),
+          ProfileMenuButton(key: _profileKey),
           const SizedBox(width: 4),
         ],
       ),
@@ -100,12 +182,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const _Greeting(),
               const SizedBox(height: 20),
               if (data.field != null) ...[
-                _MyWorkSection(field: data.field!),
+                _MyWorkSection(key: _queueKey, field: data.field!),
                 const SizedBox(height: 28),
               ],
-              _OverviewGrid(overview: data.overview),
+              _OverviewGrid(key: _statsKey, overview: data.overview),
               const SizedBox(height: 28),
-              _RiskDistributionCard(overview: data.overview),
+              _RiskDistributionCard(
+                  key: _distributionKey, overview: data.overview),
               const SizedBox(height: 20),
               if (data.categories.isNotEmpty) ...[
                 _CategoryRiskCard(categories: data.categories),
@@ -115,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _AssignmentsSection(assignments: data.assignments!),
                 const SizedBox(height: 20),
               ],
-              _TopRiskSection(works: data.topRisk),
+              _TopRiskSection(key: _topRiskKey, works: data.topRisk),
               const SizedBox(height: 32),
             ],
           ),
@@ -178,7 +261,7 @@ class _Greeting extends StatelessWidget {
 
 /// The field officer's own queue, straight from /me/dashboard.
 class _MyWorkSection extends StatelessWidget {
-  const _MyWorkSection({required this.field});
+  const _MyWorkSection({super.key, required this.field});
   final FieldDashboard field;
 
   @override
@@ -256,7 +339,7 @@ class _MiniStat extends StatelessWidget {
 }
 
 class _OverviewGrid extends StatelessWidget {
-  const _OverviewGrid({required this.overview});
+  const _OverviewGrid({super.key, required this.overview});
   final AnalyticsOverview overview;
 
   @override
@@ -300,7 +383,7 @@ class _OverviewGrid extends StatelessWidget {
 }
 
 class _RiskDistributionCard extends StatelessWidget {
-  const _RiskDistributionCard({required this.overview});
+  const _RiskDistributionCard({super.key, required this.overview});
   final AnalyticsOverview overview;
 
   @override
@@ -600,7 +683,7 @@ class _AssignmentsSection extends StatelessWidget {
 }
 
 class _TopRiskSection extends StatelessWidget {
-  const _TopRiskSection({required this.works});
+  const _TopRiskSection({super.key, required this.works});
   final List<TopRiskWork> works;
 
   @override
