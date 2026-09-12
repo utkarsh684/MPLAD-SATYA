@@ -71,9 +71,23 @@ app.add_middleware(
 
 errors.install(app)
 
+# works goes LAST, and the order is load-bearing.
+#
+# works.py ends with GET /works/{work_code:path}, and :path is greedy - it
+# matches slashes. Work codes contain slashes ("MP/2026/1142"), which is why
+# the converter is there, but uvicorn percent-decodes the path before routing,
+# so /works/MP%2F2026%2F1142/evidence arrives as /works/MP/2026/1142/evidence
+# and that catch-all claims it with work_code="MP/2026/1142/evidence".
+#
+# Registered second, it silently swallowed every GET that other routers define
+# under /works/{code}/...: evidence, esakshi, esakshi/verify and
+# satellite/history all answered WORK_NOT_FOUND. Three tabs of the work detail
+# screen were dead, and the 404 looked like missing data rather than a route
+# that never ran. Starlette matches in registration order, so being last is
+# what makes the catch-all a fallback instead of an interceptor.
 for _router in (
-    auth, works, dashboard, decisions, citizen, sync,
-    admin, evidence, esakshi, satellite, analytics,
+    auth, dashboard, decisions, citizen, sync,
+    admin, evidence, esakshi, satellite, analytics, works,
 ):
     app.include_router(_router.router)
 

@@ -173,3 +173,67 @@ class TestContract:
         r = client.get("/api/v1/does-not-exist")
         assert r.status_code == 404
         assert r.json()["error"]["code"] == "NOT_FOUND"
+
+
+class TestTheWorkCodeCatchAllDoesNotSwallowSubRoutes:
+    """GET /works/{work_code:path} is greedy and must be matched last.
+
+    Work codes contain slashes, so the route needs the :path converter, and
+    uvicorn percent-decodes before routing - /works/MP%2F2026%2F1142/evidence
+    arrives as /works/MP/2026/1142/evidence. Registered before the routers that
+    define those sub-paths, the catch-all claimed them with a work_code of
+    "MP/2026/1142/evidence" and answered WORK_NOT_FOUND.
+
+    Nothing errored. Three tabs of the work detail screen simply showed "not
+    found", which reads as missing data rather than as a route that never ran.
+    """
+
+    @staticmethod
+    def _resolves_to(path: str, method: str = "GET") -> str:
+        """The endpoint Starlette would actually run, matching in route order."""
+        from starlette.routing import Match
+
+        scope = {
+            "type": "http", "method": method, "path": path,
+            "root_path": "", "headers": [],
+        }
+        for route in app.routes:
+            match, _ = route.matches(scope)
+            if match == Match.FULL:
+                return route.name
+        return "<unrouted>"
+
+    @pytest.mark.parametrize(
+        ("suffix", "endpoint"),
+        [
+            ("", "get_work"),
+            ("/risk", "get_risk"),
+            ("/risk/history", "history"),
+            ("/verification", "get_verification"),
+            ("/evidence", "list_evidence"),
+            ("/esakshi", "get_esakshi_record"),
+            ("/esakshi/verify", "verify_esakshi"),
+            ("/satellite/history", "satellite_history"),
+        ],
+    )
+    def test_each_sub_path_reaches_its_own_endpoint(self, suffix, endpoint):
+        path = f"/api/v1/works/MP/2026/1142{suffix}"
+        assert self._resolves_to(path) == endpoint
+
+    def test_the_catch_all_is_the_last_work_route_registered(self):
+        """Stated as an ordering invariant so a new /works/{code}/... route
+        added to a router included before works fails here rather than in an
+        officer's hands."""
+        work_routes = [
+            i for i, r in enumerate(app.routes)
+            if getattr(r, "path", "").startswith("/api/v1/works/{work_code")
+        ]
+        catch_all = [
+            i for i, r in enumerate(app.routes)
+            if getattr(r, "path", "") == "/api/v1/works/{work_code:path}"
+        ]
+        assert catch_all, "the bare work-detail route disappeared"
+        assert max(catch_all) == max(work_routes), (
+            "GET /works/{work_code:path} must be registered after every other "
+            "/works/{work_code}/... route, or it swallows them"
+        )
