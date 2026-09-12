@@ -318,22 +318,31 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
             style: GoogleFonts.inter(
                 fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
-        for (final (value, label, icon) in const [
-          ('tape', 'Tape measure', Icons.straighten_rounded),
-          ('odometer', 'Vehicle odometer', Icons.speed_rounded),
-        ])
-          RadioListTile<String>(
-            value: value,
-            groupValue: _manualMethod,
-            onChanged: (v) => setState(() => _manualMethod = v!),
-            title: Row(
-              children: [
-                Icon(icon, size: 18),
-                const SizedBox(width: 10),
-                Text(label, style: GoogleFonts.inter(fontSize: 14)),
-              ],
-            ),
+        // Flutter 3.32 moved selection state onto a RadioGroup ancestor; the
+        // per-tile groupValue/onChanged pair is deprecated and will be removed.
+        RadioGroup<String>(
+          groupValue: _manualMethod,
+          onChanged: (v) => setState(() => _manualMethod = v ?? _manualMethod),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (value, label, icon) in const [
+                ('tape', 'Tape measure', Icons.straighten_rounded),
+                ('odometer', 'Vehicle odometer', Icons.speed_rounded),
+              ])
+                RadioListTile<String>(
+                  value: value,
+                  title: Row(
+                    children: [
+                      Icon(icon, size: 18),
+                      const SizedBox(width: 10),
+                      Text(label, style: GoogleFonts.inter(fontSize: 14)),
+                    ],
+                  ),
+                ),
+            ],
           ),
+        ),
         const SizedBox(height: 24),
         FilledButton(
           onPressed: (double.tryParse(_manualValue.text.trim()) ?? 0) > 0

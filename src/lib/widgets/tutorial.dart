@@ -196,7 +196,9 @@ class _TourOverlayState extends State<_TourOverlay> {
       left: 16,
       right: 16,
       top: below ? (hole == null ? null : hole.bottom + 16) : null,
-      bottom: below ? null : media.size.height - (hole!.top - 16),
+      // No null check needed: `below` is a final local, so flow analysis
+      // carries `below == false` back to `hole != null` from its definition.
+      bottom: below ? null : media.size.height - (hole.top - 16),
       child: Align(
         alignment: hole == null ? Alignment.center : Alignment.topCenter,
         child: Material(
@@ -274,6 +276,9 @@ class _SpotlightPainter extends CustomPainter {
     final dim = Paint()..color = Colors.black.withValues(alpha: 0.72);
     final screen = Rect.fromLTWH(0, 0, size.width, size.height);
 
+    // Bound to a local because Dart promotes local variables but not public
+    // final fields, so the null check below would not narrow the field itself.
+    final hole = this.hole;
     if (hole == null) {
       canvas.drawRect(screen, dim);
       return;

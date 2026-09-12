@@ -102,6 +102,10 @@ class _VerifyWorkScreenState extends State<VerifyWorkScreen> {
       preferredCameraDevice: CameraDevice.rear,
     );
     if (file == null) return;
+    // The camera is a separate activity, and Android is free to dispose this
+    // one behind it under memory pressure. Everything below touches State and
+    // BuildContext, both of which are dead if that happened.
+    if (!mounted) return;
 
     setState(() => _uploading = true);
     try {
