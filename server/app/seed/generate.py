@@ -37,6 +37,7 @@ from app.models import (
     Evidence,
     FieldVerification,
     FundRelease,
+    RiskAssessment,
     SatelliteObservation,
     User,
     Work,
@@ -56,6 +57,8 @@ SCORE_COMMIT_EVERY = 50
 # rather than the exception, and a run that needs a human to restart it is a
 # run that does not finish.
 SCORE_ATTEMPTS = 6
+# Marks assessments produced by a --rescore pass, so the pass can resume.
+RESCORE_TRIGGER = "seed_rescore"
 
 
 def _progress(message: str) -> None:
@@ -430,8 +433,14 @@ def seed(db: Session, n_works: int = 2000, seed_value: int = SEED) -> dict:
     return {"works": len(all_works), "planted": len(planted), "users": len(DEMO_USERS)}
 
 
-def score_pending(db: Session) -> int:
+def score_pending(db: Session, *, rescore: bool = False) -> int:
     """Score every work that still has no current assessment.
+
+    With rescore=True it re-scores works that already have one, which is what
+    a rule change or an engine fix needs. That pass is resumable the same way:
+    a work counts as done once its current assessment carries this run's
+    trigger, so an interrupted rescore picks up where it stopped instead of
+    starting over.
 
     Scoring 2000 works is roughly 20,000 queries, and over a long-haul link to
     a managed database one blip ends the run - seen three times here, twice as
@@ -448,14 +457,15 @@ def score_pending(db: Session) -> int:
     rates, users and works from scratch, and re-running it is how you get a
     fresh dataset. This only fills in the scores.
     """
-    before = _unscored(db)
+    trigger = RESCORE_TRIGGER if rescore else "seed_resume"
+    before = _needs_scoring(db, rescore=rescore, trigger=trigger)
     if not before:
         _progress("nothing left to score")
         return 0
 
     for attempt in range(1, SCORE_ATTEMPTS + 1):
         try:
-            _score_once(db)
+            _score_once(db, rescore=rescore, trigger=trigger)
             break
         except OperationalError:
             # The link died mid-run. Nothing is lost: committed batches are
@@ -467,30 +477,48 @@ def score_pending(db: Session) -> int:
                 raise
             wait = min(2 ** attempt, 60)
             _progress(
-                f"connection lost after {before - _unscored(db)} works; "
+                f"connection lost after "
+                f"{before - _needs_scoring(db, rescore=rescore, trigger=trigger)} "
+                f"works; "
                 f"retrying in {wait}s ({attempt}/{SCORE_ATTEMPTS})"
             )
             time.sleep(wait)
 
-    return before - _unscored(db)
+    return before - _needs_scoring(db, rescore=rescore, trigger=trigger)
 
 
-def _unscored(db: Session) -> int:
+def _pending_filter(*, rescore: bool, trigger: str):
+    """Which works still need this pass.
+
+    Unscored works always qualify. In a rescore, so does anything whose
+    current assessment predates this run - identified by its trigger, which
+    is what makes an interrupted rescore resumable rather than restartable.
+    """
+    if not rescore:
+        return Work.current_assessment_id.is_(None)
+    stale = select(RiskAssessment.id).where(
+        RiskAssessment.id == Work.current_assessment_id,
+        RiskAssessment.trigger_reason == trigger,
+    )
+    return ~stale.exists()
+
+
+def _needs_scoring(db: Session, *, rescore: bool = False, trigger: str = "") -> int:
     return db.execute(
         select(func.count()).select_from(Work)
-        .where(Work.current_assessment_id.is_(None))
+        .where(_pending_filter(rescore=rescore, trigger=trigger))
     ).scalar_one()
 
 
-def _score_once(db: Session) -> None:
-    """One pass over everything that still has no assessment."""
+def _score_once(db: Session, *, rescore: bool = False, trigger: str = "") -> None:
+    """One pass over everything this run still owes."""
     pending = db.execute(
-        select(Work).where(Work.current_assessment_id.is_(None))
+        select(Work).where(_pending_filter(rescore=rescore, trigger=trigger))
     ).scalars().all()
     total = len(pending)
-    _progress(f"scoring {total} works that have no assessment yet")
+    _progress(f"scoring {total} works")
     for i, work in enumerate(pending, 1):
-        score_work(db, work, trigger="seed_resume")
+        score_work(db, work, trigger=trigger)
         if i % SCORE_COMMIT_EVERY == 0 or i == total:
             db.commit()
             _progress(f"scored {i}/{total}")
@@ -556,12 +584,18 @@ def main() -> int:
         action="store_true",
         help="score works left unscored by an interrupted run; builds nothing new",
     )
+    parser.add_argument(
+        "--rescore",
+        action="store_true",
+        help="re-score works that already have an assessment, after a rule or "
+             "engine change; builds nothing new and keeps the old assessments",
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
     try:
-        if args.resume:
-            scored = score_pending(db)
+        if args.resume or args.rescore:
+            scored = score_pending(db, rescore=args.rescore)
             problems = self_check(db)
             if problems:
                 print("SELF-CHECK FAILED after resume:", file=sys.stderr)
@@ -569,7 +603,8 @@ def main() -> int:
                     print(f"  - {p}", file=sys.stderr)
                 return 1
             db.commit()
-            print(f"resumed: scored {scored} works; self-check passed")
+            verb = "rescored" if args.rescore else "resumed: scored"
+            print(f"{verb} {scored} works; self-check passed")
             return 0
 
         if not args.keep:

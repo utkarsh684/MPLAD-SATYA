@@ -130,3 +130,72 @@ class TestAnalyticsOverviewDoesNotInventAZero:
 
         body = overview(db=self._empty_db(), user=None)
         assert body["assessed_works"] == sum(body["by_band"].values())
+
+
+class TestAnUnknownLocationIsNotADefaultLocation:
+    """The evidence pipeline used to fall back to Bhopal's coordinates.
+
+    A photo would then be checked for GPS drift against a place nobody had
+    claimed for that work, manufacturing a distance - and a verdict - out of a
+    default. Unknown has to stay unknown all the way through.
+    """
+
+    @staticmethod
+    def _exif_at(lat: float, lon: float):
+        from app.services.exif import ExifResult, GpsInfo
+
+        return ExifResult(gps=GpsInfo(lat=lat, lon=lon))
+
+    def test_trust_scoring_says_so_instead_of_inventing_a_distance(self):
+        from app.services.exif import gps_trust_score
+
+        # A photo 400 km from Bhopal. Against the old default this scored as a
+        # gross GPS offset; with no location on record there is nothing to
+        # compare it to.
+        far = self._exif_at(26.9, 75.8)
+        unknown, flags = gps_trust_score(far, work_lat=None, work_lon=None)
+        assert "work_location_unknown" in flags
+        assert not any(f.startswith("gps_offset_") for f in flags)
+
+        # The control is the same photo taken at the work site. An unknown
+        # location must cost exactly what a perfect match costs - nothing -
+        # rather than being charged for a distance nobody could measure.
+        on_site, _ = gps_trust_score(
+            self._exif_at(26.9, 75.8), work_lat=26.9, work_lon=75.8
+        )
+        assert unknown == on_site
+
+    def test_offset_is_none_when_either_end_is_unknown(self):
+        from app.services.exif import photo_offset_m
+
+        assert photo_offset_m(self._exif_at(23.3, 77.4), None, None) is None
+
+    def test_a_known_location_still_measures_normally(self):
+        from app.services.exif import gps_trust_score
+
+        _score, flags = gps_trust_score(
+            self._exif_at(26.9, 75.8), work_lat=23.2599, work_lon=77.4126
+        )
+        assert any(f.startswith("gps_offset_") for f in flags)
+
+
+def test_geo_signals_do_not_depend_on_the_optional_shapely_decode():
+    """Shapely is a declared dependency, but the geo facts must not need it.
+
+    When it was absent, geoalchemy2's to_shape raised, the caller read that as
+    "this work has no location", and GEO_DUPLICATE quietly stopped firing on
+    every work in the database - scores stayed plausible while a whole fraud
+    signal was dead. The geometry now stays in SQL, so a missing decode cannot
+    silently subtract a finding.
+    """
+    import pathlib
+
+    source = pathlib.Path(__file__).parent.parent / "app" / "risk" / "facts.py"
+    # Comments are allowed to explain the history; imports are what matter.
+    code = [
+        line for line in source.read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    offenders = [ln for ln in code if "import" in ln and
+                 ("shapely" in ln.lower() or "to_shape" in ln)]
+    assert not offenders, offenders

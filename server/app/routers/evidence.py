@@ -32,14 +32,20 @@ def _load_work(db, work_code: str) -> Work:
     return work
 
 
-def _work_location(work: Work) -> tuple[float, float]:
-    """Extract lat/lon from PostGIS geography."""
-    try:
-        from geoalchemy2.shape import to_shape
-        point = to_shape(work.location)
-        return point.y, point.x
-    except Exception:
-        return 23.2599, 77.4126
+def _work_location(work: Work) -> tuple[float | None, float | None]:
+    """The work's lat/lon, or (None, None) when it has none on record.
+
+    This used to fall back to Bhopal's coordinates on any failure, which meant
+    a photo could be checked for GPS drift against a location nobody had ever
+    claimed for that work - manufacturing a distance, and a verdict, from a
+    default. Callers are expected to treat unknown as unknown.
+    """
+    if work.location is None:
+        return (None, None)
+    from geoalchemy2.shape import to_shape
+
+    point = to_shape(work.location)
+    return point.y, point.x
 
 
 # Raster formats only. SVG is deliberately absent: it is XML, it can carry

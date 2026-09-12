@@ -57,11 +57,15 @@ def _benchmark(db: Session, work: Work) -> BenchmarkRate | None:
 def _nearest_similar_work(db: Session, work: Work) -> tuple[float | None, str | None]:
     """Closest other work of the same category, for the geo-duplicate signal.
 
-    The point is rebuilt in SQL from plain floats rather than bound as the
-    ORM's geometry object: psycopg3 cannot adapt a GeoAlchemy2 WKBElement as a
-    parameter and raises "cannot adapt type 'WKBElement'". That aborted the
-    whole facts build, so GEO_DUPLICATE could never fire against a real
-    database - including on the hero work, where it is an 18-point reason.
+    The point is read back out of the row that already holds it rather than
+    bound as a parameter: psycopg3 cannot adapt a GeoAlchemy2 WKBElement and
+    raises "cannot adapt type 'WKBElement'". An earlier version decoded it to
+    floats in Python with geoalchemy2's to_shape, which needs Shapely - and
+    when Shapely was missing the decode raised, the caller read that as "no
+    location", and GEO_DUPLICATE silently stopped firing on every work in the
+    database. Scores stayed plausible, which is the worst way for this to
+    fail. Letting SQL use the geometry in place removes the decode, the
+    dependency, and that entire failure mode.
 
     A work with no recorded location has no neighbours to compare against; it
     returns None rather than defaulting to a distance, so a missing location
@@ -70,15 +74,11 @@ def _nearest_similar_work(db: Session, work: Work) -> tuple[float | None, str | 
     if work.location is None:
         return (None, None)
 
-    lat, lon = _lat_lon(work)
-    if lat is None or lon is None:
-        return (None, None)
-
     row = db.execute(
         text(
             """
             WITH here AS (
-                SELECT ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography AS g
+                SELECT location AS g FROM works WHERE id = :work_id
             )
             SELECT w.work_code,
                    ST_Distance(w.location, here.g) AS distance_m
@@ -93,25 +93,12 @@ def _nearest_similar_work(db: Session, work: Work) -> tuple[float | None, str | 
             """
         ),
         {
-            "lat": lat,
-            "lon": lon,
             "work_id": work.id,
             "category": work.category,
             "radius": SIMILAR_WORK_RADIUS_M,
         },
     ).first()
     return (float(row.distance_m), row.work_code) if row else (None, None)
-
-
-def _lat_lon(work: Work) -> tuple[float | None, float | None]:
-    """Decode the stored geography into plain floats."""
-    try:
-        from geoalchemy2.shape import to_shape
-
-        point = to_shape(work.location)
-        return float(point.y), float(point.x)
-    except Exception:
-        return (None, None)
 
 
 def _photo_reuse(db: Session, work: Work) -> tuple[float | None, str | None]:
@@ -163,28 +150,20 @@ def _max_photo_offset(db: Session, work: Work) -> float | None:
     if work.location is None:
         return None
 
-    # Same WKBElement adaptation problem as _nearest_similar_work: the point is
-    # rebuilt in SQL from floats rather than bound as the ORM geometry object.
-    lat, lon = _lat_lon(work)
-    if lat is None or lon is None:
-        return None
-
+    # Same reasoning as _nearest_similar_work: the work's own geometry is used
+    # in place rather than decoded into Python and sent back.
     row = db.execute(
         text(
             """
-            SELECT MAX(
-                     ST_Distance(
-                       e.gps,
-                       ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography
-                     )
-                   ) AS max_offset_m
-            FROM evidence e
-            WHERE e.work_id = :work_id
+            SELECT MAX(ST_Distance(e.gps, w.location)) AS max_offset_m
+            FROM evidence e, works w
+            WHERE w.id = :work_id
+              AND e.work_id = :work_id
               AND e.gps IS NOT NULL
               AND e.deleted_at IS NULL
             """
         ),
-        {"lat": lat, "lon": lon, "work_id": work.id},
+        {"work_id": work.id},
     ).first()
     return round(float(row.max_offset_m), 1) if row and row.max_offset_m else None
 

@@ -87,8 +87,8 @@ def extract_exif(image_path: str | Path) -> ExifResult:
 def gps_trust_score(
     exif: ExifResult,
     *,
-    work_lat: float,
-    work_lon: float,
+    work_lat: float | None,
+    work_lon: float | None,
     claimed_accuracy_m: float | None = None,
     is_mock_location: bool = False,
 ) -> tuple[int, list[str]]:
@@ -103,16 +103,24 @@ def gps_trust_score(
         score -= 60
         flags.append("mock_location_flag")
 
-    # Distance between EXIF GPS and the work's registered location
-    dlat = exif.gps.lat - work_lat
-    dlon = exif.gps.lon - work_lon
-    dist_m = math.sqrt(dlat**2 + dlon**2) * 111_320
-    if dist_m > 500:
-        score -= 40
-        flags.append(f"gps_offset_{int(dist_m)}m")
-    elif dist_m > 100:
-        score -= 20
-        flags.append(f"gps_offset_{int(dist_m)}m")
+    # Distance between EXIF GPS and the work's registered location.
+    #
+    # A work with no recorded location cannot be compared against, and
+    # substituting a default would measure the photo against a place nobody
+    # claimed - inventing a finding, or clearing one, out of nothing. The
+    # comparison is skipped and said out loud instead.
+    if work_lat is None or work_lon is None:
+        flags.append("work_location_unknown")
+    else:
+        dlat = exif.gps.lat - work_lat
+        dlon = exif.gps.lon - work_lon
+        dist_m = math.sqrt(dlat**2 + dlon**2) * 111_320
+        if dist_m > 500:
+            score -= 40
+            flags.append(f"gps_offset_{int(dist_m)}m")
+        elif dist_m > 100:
+            score -= 20
+            flags.append(f"gps_offset_{int(dist_m)}m")
 
     if claimed_accuracy_m is not None and claimed_accuracy_m < 1.0:
         score -= 15
@@ -129,9 +137,14 @@ def gps_trust_score(
     return max(0, min(100, score)), flags
 
 
-def photo_offset_m(exif: ExifResult, work_lat: float, work_lon: float) -> float | None:
-    """Distance in metres between the photo's EXIF GPS and the work location."""
-    if exif.gps is None:
+def photo_offset_m(
+    exif: ExifResult, work_lat: float | None, work_lon: float | None
+) -> float | None:
+    """Distance in metres between the photo's EXIF GPS and the work location.
+
+    None when either end is unknown - an unmeasurable distance, not a zero one.
+    """
+    if exif.gps is None or work_lat is None or work_lon is None:
         return None
     dlat = exif.gps.lat - work_lat
     dlon = exif.gps.lon - work_lon
