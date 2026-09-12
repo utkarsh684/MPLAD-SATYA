@@ -103,7 +103,7 @@ class _SummaryGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 2.1,
+      mainAxisExtent: _MoneyTile.gridExtent(context),
       children: [
         _MoneyTile(
             label: 'Total sanctioned',
@@ -133,6 +133,12 @@ class _MoneyTile extends StatelessWidget {
   final String money;
   final Color color;
 
+  /// Same reasoning as [StatCard.gridExtent]. These tiles carry the largest
+  /// figures in the app - "Rs 1,23,456.78 Cr" - so they are the likeliest to
+  /// outgrow a cell sized by ratio.
+  static double gridExtent(BuildContext context) =>
+      32 + 40 * MediaQuery.textScalerOf(context).scale(1);
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -146,9 +152,15 @@ class _MoneyTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(money,
-              style: GoogleFonts.inter(
-                  fontSize: 17, fontWeight: FontWeight.w800, color: color)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(money,
+                maxLines: 1,
+                softWrap: false,
+                style: GoogleFonts.inter(
+                    fontSize: 17, fontWeight: FontWeight.w800, color: color)),
+          ),
           const SizedBox(height: 2),
           Text(label,
               style: GoogleFonts.inter(fontSize: 11, color: color)),

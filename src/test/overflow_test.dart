@@ -14,6 +14,7 @@ import 'package:mplad_satya/data/models/work.dart';
 import 'package:mplad_satya/data/models/evidence.dart';
 import 'package:mplad_satya/data/models/risk.dart';
 import 'package:mplad_satya/widgets/evidence_tile.dart';
+import 'package:mplad_satya/widgets/stat_card.dart';
 import 'package:mplad_satya/widgets/provenance.dart';
 import 'package:mplad_satya/widgets/source_card_tile.dart';
 import 'package:mplad_satya/widgets/work_card.dart';
@@ -144,6 +145,73 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Stat cards in the dashboard grid', () {
+    /// The real grid geometry from DashboardScreen, so the test fails for the
+    /// same reason the dashboard did.
+    Widget grid(List<StatCard> cards, {double textScale = 1.0}) => MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+          child: Builder(
+            builder: (context) => GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              mainAxisExtent: StatCard.gridExtent(context),
+              children: cards,
+            ),
+          ),
+        );
+
+    const cards = [
+      StatCard(
+          title: 'Total Projects', value: '2000', icon: Icons.folder_open_rounded),
+      StatCard(title: 'High risk', value: '1', icon: Icons.error_outline_rounded),
+      // The value that overflowed on a real phone: it wrapped to two lines and
+      // pushed "Cr" outside the card border.
+      StatCard(
+          title: 'Sanctioned',
+          value: '₹571.00 Cr',
+          icon: Icons.account_balance_wallet_rounded),
+      StatCard(
+          title: 'Pending releases',
+          value: '6',
+          icon: Icons.pending_actions_rounded),
+    ];
+
+    testWidgets('the four dashboard cards fit at 360dp', (tester) async {
+      await _pumpAt(tester, grid(cards), size: const Size(360, 720));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('they still fit at 320dp', (tester) async {
+      await _pumpAt(tester, grid(cards));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('they fit with type enlarged to the clamp', (tester) async {
+      // app.dart clamps the scaler at 1.3; the grid height has to follow it.
+      await _pumpAt(tester, grid(cards, textScale: 1.3),
+          size: const Size(360, 720));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a very long value scales down instead of wrapping',
+        (tester) async {
+      await _pumpAt(
+        tester,
+        grid(const [
+          StatCard(
+              title: 'Sanctioned',
+              value: '₹1,23,456.78 Cr',
+              icon: Icons.account_balance_wallet_rounded),
+        ]),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('₹1,23,456.78 Cr'), findsOneWidget);
     });
   });
 

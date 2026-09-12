@@ -295,7 +295,7 @@ class _MyWorkSection extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 2.5,
+          mainAxisExtent: _MiniStat.gridExtent(context),
           children: [
             _MiniStat(
                 label: 'Assigned',
@@ -328,6 +328,12 @@ class _MiniStat extends StatelessWidget {
   final String value;
   final Color color;
 
+  /// Same reasoning as [StatCard.gridExtent]: a number over a label has a
+  /// height set by the type, so an aspect ratio overflows once the officer
+  /// enlarges text.
+  static double gridExtent(BuildContext context) =>
+      28 + 42 * MediaQuery.textScalerOf(context).scale(1);
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -339,9 +345,14 @@ class _MiniStat extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(value,
-              style: GoogleFonts.inter(
-                  fontSize: 22, fontWeight: FontWeight.w700, color: color)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value,
+                maxLines: 1,
+                softWrap: false,
+                style: GoogleFonts.inter(
+                    fontSize: 22, fontWeight: FontWeight.w700, color: color)),
+          ),
           const SizedBox(height: 2),
           Text(label,
               textAlign: TextAlign.center,
@@ -365,7 +376,7 @@ class _OverviewGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      mainAxisExtent: StatCard.gridExtent(context),
       children: [
         StatCard(
           title: l10n.totalProjects,

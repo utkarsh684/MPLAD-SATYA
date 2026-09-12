@@ -21,6 +21,19 @@ class StatCard extends StatelessWidget {
     this.onTap,
   });
 
+  /// Height this card needs inside a grid, at the caller's text scale.
+  ///
+  /// The card is an icon block, a number and a label stacked vertically, so
+  /// its height is set by the type and does not shrink as the column narrows.
+  /// A grid sizing cells by childAspectRatio therefore overflows at some
+  /// width - on a 360dp phone the cells came out around 104px for content
+  /// needing about 130, and all four labels rendered outside their borders.
+  ///
+  /// Pass this as mainAxisExtent. It lives here rather than at the call site
+  /// so the number cannot drift away from the layout it describes.
+  static double gridExtent(BuildContext context) =>
+      100 + 46 * MediaQuery.textScalerOf(context).scale(1);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -54,12 +67,21 @@ class StatCard extends StatelessWidget {
                 child: Icon(icon, size: 20, color: effectiveColor),
               ),
               const SizedBox(height: 12),
-              Text(
-                value,
-                style: GoogleFonts.inter(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: theme.textTheme.displayLarge?.color,
+              // Scale down rather than wrap. "Rs 571.00 Cr" is one value, and
+              // breaking it across two lines both pushed the label out of the
+              // card and split a number in a way a reader has to reassemble.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: GoogleFonts.inter(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: theme.textTheme.displayLarge?.color,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
