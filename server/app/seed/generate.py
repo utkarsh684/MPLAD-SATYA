@@ -184,21 +184,47 @@ def seed(db: Session, n_works: int = 2000, seed_value: int = SEED) -> dict:
     planted_codes = {p["work_code"] for p in planted}
     works_by_code: dict[str, Work] = {}
 
+    # --- positions first, because a geo-duplicate must be placed relative to
+    # its anchor and the anchor may appear later in the fixture.
+    #
+    # Previously this resolved the anchor from works_by_code while still
+    # building that map, so for the hero - which is the first planted case and
+    # names an anchor defined fifth - the lookup returned None and it silently
+    # fell back to the base point. Worse, even the success branch offset from
+    # the hardcoded base rather than from the anchor's own position. The two
+    # bugs together left the "duplicate" pair about a kilometre apart, so
+    # GEO_DUPLICATE could never fire on the demo work it exists to demonstrate.
+    base_lat, base_lon = 23.2599, 77.4126
+    positions: dict[str, tuple[float, float]] = {}
+
+    for case in planted:
+        if not case.get("inject", {}).get("geo_duplicate_of"):
+            positions[case["work_code"]] = _offset(
+                base_lat, base_lon, rng.uniform(200, 4000), rng.uniform(0, 360)
+            )
+
+    for case in planted:
+        inject = case.get("inject", {})
+        anchor_code = inject.get("geo_duplicate_of")
+        if not anchor_code:
+            continue
+        anchor_pos = positions.get(anchor_code)
+        if anchor_pos is None:
+            # An anchor that is itself a duplicate is not a case the fixture
+            # expresses; failing loudly beats planting a silent non-duplicate.
+            raise ValueError(
+                f"{case['work_code']} is a geo-duplicate of {anchor_code}, "
+                "which has no position - is the anchor also a duplicate?"
+            )
+        positions[case["work_code"]] = _offset(
+            anchor_pos[0], anchor_pos[1], inject["geo_offset_m"], 47.0
+        )
+
     # --- planted cases first, so ordinary works can avoid colliding with them
     for case in planted:
         inject = case.get("inject", {})
         rate = rates[case["category"]]
-        base_lat, base_lon = 23.2599, 77.4126
-        if inject.get("geo_duplicate_of"):
-            anchor = works_by_code.get(inject["geo_duplicate_of"])
-            if anchor is not None:
-                lat, lon = _offset(
-                    23.2599, 77.4126, inject["geo_offset_m"], 47.0
-                )
-            else:
-                lat, lon = base_lat, base_lon
-        else:
-            lat, lon = _offset(base_lat, base_lon, rng.uniform(200, 4000), rng.uniform(0, 360))
+        lat, lon = positions[case["work_code"]]
 
         overdue = inject.get("days_overdue", 0)
         expected = today - timedelta(days=overdue) if overdue else today + timedelta(days=45)
