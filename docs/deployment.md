@@ -49,7 +49,17 @@ cd server && python -m app.seed.generate --works 2000 --seed 42
 # Scoring is the long half. A dropped connection leaves the works in
 # place but unscored - re-run this until it reports nothing pending:
 python -m app.seed.generate --resume
+
+# After a rule change, an engine fix, or anything that alters how a score
+# is computed, the stored assessments are stale - they were correct for
+# rules that no longer apply. This recomputes them:
+python -m app.seed.generate --rescore
 ```
+
+`--rescore` supersedes rather than deletes, so assessments computed under the
+previous rules stay readable and a score can still be explained as it stood
+when a decision was taken. It marks its own work, so an interrupted rescore
+resumes rather than starting over.
 
 The seeder:
 - Creates 3 districts (Bhopal, Sehore, Raisen)
