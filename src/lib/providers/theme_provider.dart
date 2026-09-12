@@ -5,13 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ThemeProvider extends ChangeNotifier {
   static const String _key = 'theme_mode';
 
-  /// Light until the officer says otherwise.
+  /// Follow the device until the officer says otherwise.
   ///
-  /// Following the system would hand a first-time user whatever their phone
-  /// happened to be set to, and a dark public-records screen in bright
-  /// outdoor light is the harder read of the two. Dark and system are both a
-  /// tap away in the profile menu, and the choice persists once made.
-  static const ThemeMode _default = ThemeMode.light;
+  /// Someone who has set their phone to dark has already stated a preference,
+  /// and overriding it on first launch ignores an answer they gave once for
+  /// every app. Light and dark are both a tap away in the profile menu, and
+  /// an explicit choice here persists over the system setting.
+  static const ThemeMode _default = ThemeMode.system;
 
   ThemeMode _themeMode = _default;
 

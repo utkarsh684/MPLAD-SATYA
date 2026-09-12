@@ -22,6 +22,17 @@ class RiskScoreIndicator extends StatelessWidget {
   final double size;
   final String? label;
 
+  /// Stroke width of the ring, as a fraction of [size].
+  static const _strokeFraction = 0.085;
+
+  /// Widest column that stays clear of the ring.
+  ///
+  /// The inner circle is [size] less the stroke on both sides; the widest
+  /// box that fits inside a circle is its diameter over root two. Deriving it
+  /// rather than picking a number keeps it correct when [size] changes.
+  double get _innerWidth =>
+      (size - 2 * size * _strokeFraction) / math.sqrt2;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -40,45 +51,66 @@ class RiskScoreIndicator extends StatelessWidget {
                 progress: value,
                 color: band.color,
                 trackColor: band.color.withValues(alpha: 0.14),
-                strokeWidth: size * 0.085,
+                strokeWidth: size * _strokeFraction,
               ),
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(band.icon, size: size * 0.13, color: band.color),
-              const SizedBox(height: 2),
-              Text(
-                '$score',
-                style: GoogleFonts.inter(
-                  fontSize: size * 0.3,
-                  fontWeight: FontWeight.w800,
-                  color: band.color,
-                  height: 1,
-                ),
-              ),
-              Text(
-                '/100',
-                style: GoogleFonts.inter(
-                  fontSize: size * 0.09,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              if (label != null && label!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  label!,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: size * 0.073,
-                    fontWeight: FontWeight.w700,
-                    color: band.color,
-                    letterSpacing: 0.8,
+          // Everything printed inside the ring has to fit a circle, not a
+          // box. The label sits below the centre, where the chord is far
+          // narrower than the inner diameter: at size 150 the inner circle is
+          // about 124px across but only about 94px is available at the
+          // label's height, and "REVIEW REQUIRED" wanted 114. It ran out over
+          // the stroke on both sides.
+          //
+          // Constraining to the widest column that stays inside the circle,
+          // and scaling down as a backstop, makes that true at any size and
+          // for any band label - a longer one shrinks instead of escaping.
+          SizedBox(
+            width: _innerWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(band.icon, size: size * 0.13, color: band.color),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '$score',
+                    maxLines: 1,
+                    style: GoogleFonts.inter(
+                      fontSize: size * 0.3,
+                      fontWeight: FontWeight.w800,
+                      color: band.color,
+                      height: 1,
+                    ),
                   ),
                 ),
+                Text(
+                  '/100',
+                  style: GoogleFonts.inter(
+                    fontSize: size * 0.09,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                if (label != null && label!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label!,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: GoogleFonts.inter(
+                        fontSize: size * 0.062,
+                        fontWeight: FontWeight.w700,
+                        color: band.color,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),

@@ -7,13 +7,17 @@
 /// is the check - no screenshot required.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mplad_satya/data/models/money.dart';
 import 'package:mplad_satya/data/models/work.dart';
 import 'package:mplad_satya/data/models/evidence.dart';
 import 'package:mplad_satya/data/models/risk.dart';
+import 'package:mplad_satya/core/theme/risk_band.dart';
 import 'package:mplad_satya/widgets/evidence_tile.dart';
+import 'package:mplad_satya/widgets/risk_score_indicator.dart';
 import 'package:mplad_satya/widgets/stat_card.dart';
 import 'package:mplad_satya/widgets/provenance.dart';
 import 'package:mplad_satya/widgets/source_card_tile.dart';
@@ -145,6 +149,79 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('The risk gauge keeps its text inside the ring', () {
+    /// Widest column that fits inside the ring, mirroring the widget: the
+    /// inner circle is size less the stroke on both sides, and the widest box
+    /// inside a circle is its diameter over root two.
+    double innerWidth(double size) => (size - 2 * size * 0.085) / math.sqrt2;
+
+    /// Painted width of a label, after any scale-down has been applied.
+    double paintedLabelWidth(WidgetTester tester, String label) => tester
+        .getSize(find.ancestor(
+            of: find.text(label), matching: find.byType(FittedBox)))
+        .width;
+
+    testWidgets('the longest real band label stays inside', (tester) async {
+      // This is the one that escaped: at size 150 it wanted about 114px where
+      // roughly 94 was available, and ran out over the stroke on both sides.
+      await _pumpAt(
+        tester,
+        const Center(
+          child: RiskScoreIndicator(
+            score: 32,
+            band: RiskBand.yellow,
+            size: 150,
+            label: 'REVIEW REQUIRED',
+          ),
+        ),
+        size: const Size(360, 720),
+      );
+      expect(tester.takeException(), isNull);
+      expect(paintedLabelWidth(tester, 'REVIEW REQUIRED'),
+          lessThanOrEqualTo(innerWidth(150) + 0.5));
+    });
+
+    testWidgets('a three-digit score stays inside', (tester) async {
+      await _pumpAt(
+        tester,
+        const Center(
+          child: RiskScoreIndicator(
+            score: 100,
+            band: RiskBand.red,
+            size: 150,
+            label: 'HIGH RISK',
+          ),
+        ),
+        size: const Size(360, 720),
+      );
+      expect(tester.takeException(), isNull);
+      expect(paintedLabelWidth(tester, 'HIGH RISK'),
+          lessThanOrEqualTo(innerWidth(150) + 0.5));
+    });
+
+    testWidgets('an unreasonably long label shrinks rather than escaping',
+        (tester) async {
+      // Band labels come from the server, so the widget must not assume a
+      // length it was never promised.
+      const long = 'HOLD RELEASE FOR FIELD REVIEW';
+      await _pumpAt(
+        tester,
+        const Center(
+          child: RiskScoreIndicator(
+            score: 80,
+            band: RiskBand.red,
+            size: 150,
+            label: long,
+          ),
+        ),
+        size: const Size(360, 720),
+      );
+      expect(tester.takeException(), isNull);
+      expect(paintedLabelWidth(tester, long),
+          lessThanOrEqualTo(innerWidth(150) + 0.5));
     });
   });
 
