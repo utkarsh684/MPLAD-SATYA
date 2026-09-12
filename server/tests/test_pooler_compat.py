@@ -39,7 +39,9 @@ class TestPoolerDetection:
         and session state are fine. Supabase serves it from the SAME hostname
         as the transaction pooler, so only the port distinguishes them."""
         assert is_transaction_pooler(SUPABASE_SESSION_POOLER) is False
-        assert "connect_args" not in _engine_kwargs(SUPABASE_SESSION_POOLER)
+        assert "prepare_threshold" not in _engine_kwargs(
+            SUPABASE_SESSION_POOLER
+        )["connect_args"]
 
     def test_pgbouncer_default_port_is_detected(self):
         assert is_transaction_pooler(
@@ -61,7 +63,11 @@ class TestPreparedStatementsAreDisabledBehindAPooler:
 
     def test_direct_connection_keeps_prepared_statements(self):
         # They are a genuine performance win when the connection is ours.
-        assert "connect_args" not in _engine_kwargs(NEON)
+        assert "prepare_threshold" not in _engine_kwargs(NEON)["connect_args"]
+
+    def test_local_connection_has_no_connect_args_at_all(self):
+        # Nothing to tune over a loopback socket.
+        assert "connect_args" not in _engine_kwargs(LOCAL)
 
 
 class TestPoolSizing:
@@ -153,3 +159,31 @@ class TestProviderUrlsAreAcceptedVerbatim:
             jwt_secret="x" * 32,
         )
         assert s.database_migration_url.startswith("postgresql+psycopg://")
+
+
+class TestDeadConnectionsFailRatherThanHang:
+    """libpq waits on a socket with no deadline by default.
+
+    When the link to a managed database dies mid-statement the client blocks
+    in poll() forever. The seeder did exactly this for fourteen minutes on
+    eight seconds of CPU, which reads as slowness rather than as a fault -
+    the reason it survived several runs unnoticed.
+    """
+
+    @pytest.mark.parametrize(
+        "url", [SUPABASE_POOLER, SUPABASE_SESSION_POOLER, SUPABASE_DIRECT, NEON]
+    )
+    def test_remote_connections_bound_how_long_they_wait(self, url):
+        args = _engine_kwargs(url)["connect_args"]
+        assert args["keepalives"] == 1
+        # The decisive one: keepalives do not fire while data is still queued
+        # for transmission, which is the case that actually hung the seeder.
+        assert args["tcp_user_timeout"] > 0
+        assert args["connect_timeout"] > 0
+
+    def test_the_pooler_keeps_both_its_settings(self):
+        """A literal connect_args dict in the pooler branch would silently
+        drop the TCP settings; this pins that they coexist."""
+        args = _engine_kwargs(SUPABASE_POOLER)["connect_args"]
+        assert args["prepare_threshold"] is None
+        assert args["tcp_user_timeout"] > 0

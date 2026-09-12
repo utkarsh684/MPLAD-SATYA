@@ -49,6 +49,29 @@ def _engine_kwargs(url: str) -> dict:
         # extra round trips and make bulk loading survive a real network.
         extra["insertmanyvalues_page_size"] = 50
 
+        # Make a dead connection fail instead of hanging forever.
+        #
+        # libpq's default is to wait on the socket with no deadline, so when
+        # the link to a managed database drops mid-statement - flaky wifi, a
+        # pooler restart, a NAT table losing the mapping - the client blocks
+        # in poll() indefinitely. The seeder hit exactly this: fourteen
+        # minutes of wall clock, eight seconds of CPU, an open socket to a
+        # peer that was never going to answer. It looks like slowness, which
+        # is why it went unnoticed through several runs.
+        #
+        # keepalives probe an idle link; tcp_user_timeout bounds how long an
+        # *unacknowledged send* may linger, which is the case that actually
+        # bit us. Both are needed - keepalives alone do not fire while data
+        # is still queued for transmission.
+        extra["connect_args"] = {
+            "connect_timeout": 15,
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 3,
+            "tcp_user_timeout": 60_000,  # ms
+        }
+
     if not is_transaction_pooler(url):
         # Direct connection: SQLAlchemy owns the pool.
         #
@@ -68,6 +91,9 @@ def _engine_kwargs(url: str) -> dict:
         "pool_pre_ping": True,
         "pool_recycle": 300,
         "connect_args": {
+            # Merged with the remote TCP settings above rather than replacing
+            # them; a literal dict here would silently drop the keepalives.
+            **extra.pop("connect_args", {}),
             # psycopg3 promotes a statement to a server-side prepared statement
             # after prepare_threshold executions (default 5). In transaction
             # mode the next transaction may land on a different backend that
