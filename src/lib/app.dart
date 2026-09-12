@@ -43,6 +43,29 @@ class _MpladSatyaAppState extends State<MpladSatyaApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           routerConfig: _router!,
+          builder: (context, child) {
+            // Clamp system font scaling.
+            //
+            // Android lets a user set text up to ~2x, and government officers
+            // routinely do. Unclamped, every fixed-height row, stat tile and
+            // badge in the app overflows its box - which is exactly what was
+            // reported from a real device.
+            //
+            // Clamping rather than ignoring: accessibility scaling still works
+            // up to 1.3x, which covers the large-text setting most people
+            // actually use, while the layout stays inside its boxes. Beyond
+            // that the correct answer is a reflowed layout, not a burst one.
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: media.textScaler.clamp(
+                  minScaleFactor: 1.0,
+                  maxScaleFactor: 1.3,
+                ),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
         );
       },
     );

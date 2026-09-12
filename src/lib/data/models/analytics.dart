@@ -73,22 +73,36 @@ class CategoryRisk {
 class DistrictSummary {
   final String district;
   final int works;
+
+  /// How many of [works] actually carry a current assessment.
+  ///
+  /// The average is computed over these, not over [works], so the two numbers
+  /// must be shown together. "657 works, average risk 6.8" when 50 were
+  /// assessed is a false statement, not a rounding detail.
+  final int assessedWorks;
   final Money totalSanctioned;
-  final double avgRiskScore;
+
+  /// Null when no work in the district has been assessed - never 0, which
+  /// would paint the least-assessed district as the safest.
+  final double? avgRiskScore;
 
   const DistrictSummary({
     required this.district,
     required this.works,
+    required this.assessedWorks,
     required this.totalSanctioned,
-    required this.avgRiskScore,
+    this.avgRiskScore,
   });
 
   factory DistrictSummary.fromJson(Map<String, dynamic> json) => DistrictSummary(
         district: asString(json['district']),
         works: asInt(json['works']),
+        assessedWorks: asInt(json['assessed_works']),
         totalSanctioned: Money.fromJson(json['total_sanctioned_paise']),
-        avgRiskScore: asDouble(json['avg_risk_score']),
+        avgRiskScore: asDoubleOrNull(json['avg_risk_score']),
       );
+
+  bool get hasAssessments => assessedWorks > 0 && avgRiskScore != null;
 }
 
 /// `GET /analytics/top-risk`.

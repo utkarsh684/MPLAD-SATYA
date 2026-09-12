@@ -102,6 +102,10 @@ def district_summary(db: DbSession, user: CurrentUser):
         select(
             District.name,
             func.count(Work.id).label("works"),
+            # The average covers assessed works only, so the count of those
+            # has to travel with it. Reporting "657 works, average risk 6.8"
+            # when 50 were assessed states something that is not true.
+            func.count(RiskAssessment.id).label("assessed"),
             func.sum(Work.sanctioned_amount_paise).label("total_paise"),
             func.avg(RiskAssessment.score).label("avg_score"),
         )
@@ -115,6 +119,7 @@ def district_summary(db: DbSession, user: CurrentUser):
         {
             "district": r.name,
             "works": r.works,
+            "assessed_works": r.assessed,
             "total_sanctioned_paise": int(r.total_paise or 0),
             # None, not 0. This is an OUTER join: a district whose works have
             # no current assessment yields NULL here, and reporting that as 0

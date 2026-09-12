@@ -51,3 +51,37 @@ def test_inconclusive_sources_are_excluded_not_counted_as_disagreement():
         _v("field", "inconclusive"),
     ]
     assert consistency_pct(verdicts) == 100
+
+
+# --------------------------------------------------------------------------
+# Analytics must not mix populations.
+#
+# district-summary counts ALL works but averages only the assessed ones, so
+# the two numbers have to travel together. With 2000 works and 150 assessed,
+# "679 works, average risk 5.9" is a false statement about 679 works - and,
+# rendered without a denominator beside work cards showing "78/100", it also
+# reads as a different scale entirely.
+# --------------------------------------------------------------------------
+
+
+def test_district_summary_reports_the_assessed_population():
+    import inspect
+
+    from app.routers import analytics
+
+    source = inspect.getsource(analytics.district_summary)
+    assert "assessed_works" in source, (
+        "the average covers assessed works only; the count of those must be "
+        "returned alongside it"
+    )
+
+
+def test_district_average_stays_null_when_nothing_is_assessed():
+    import inspect
+
+    from app.routers import analytics
+
+    source = inspect.getsource(analytics.district_summary)
+    # 0.0 would colour an entirely unassessed district green and rank it as
+    # the safest one on the screen.
+    assert "if r.avg_score is not None else None" in source

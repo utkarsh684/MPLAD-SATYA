@@ -30,7 +30,25 @@ def is_transaction_pooler(url: str) -> bool:
     return urlparse(url).port in (6543, 6432)
 
 
+def is_remote(url: str) -> bool:
+    """True when the database is not on this machine."""
+    host = (urlparse(url).hostname or "").lower()
+    return host not in ("localhost", "127.0.0.1", "::1", "")
+
+
 def _engine_kwargs(url: str) -> dict:
+    extra: dict = {}
+    if is_remote(url):
+        # Cap how many rows SQLAlchemy packs into one INSERT ... VALUES.
+        #
+        # The default lets it build enormous statements - the seeder produced
+        # one of 199 KB with 6,400 bound parameters - and pushing that through
+        # a long-haul TLS session to a managed database failed with
+        # "SSL error: ssl/tls alert bad record mac", a transport-integrity
+        # failure rather than anything SQL-level. Smaller pages cost a few
+        # extra round trips and make bulk loading survive a real network.
+        extra["insertmanyvalues_page_size"] = 50
+
     if not is_transaction_pooler(url):
         # Direct connection: SQLAlchemy owns the pool.
         #
@@ -38,7 +56,7 @@ def _engine_kwargs(url: str) -> dict:
         # especially, with auto-suspend) drops idle connections; without
         # pre-ping the first request after a quiet period raises
         # OperationalError and looks like a total outage.
-        return {"pool_size": 5, "max_overflow": 5, "pool_pre_ping": True}
+        return {"pool_size": 5, "max_overflow": 5, "pool_pre_ping": True, **extra}
 
     return {
         # Behind an external pooler, SQLAlchemy pooling is a second pool in
@@ -58,6 +76,7 @@ def _engine_kwargs(url: str) -> dict:
             # only under load, only after the fifth call. None disables it.
             "prepare_threshold": None,
         },
+        **extra,
     }
 
 

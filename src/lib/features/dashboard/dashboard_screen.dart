@@ -357,15 +357,30 @@ class _RiskDistributionCard extends StatelessWidget {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      overview.averageRiskScore.toStringAsFixed(1),
-                      style: GoogleFonts.inter(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                        color: RiskBand.fromWire(null,
-                                score: overview.averageRiskScore.round())
-                            .color,
-                      ),
+                    // The denominator is not decoration. Shown bare, "7.4"
+                    // reads as 7.4 out of 10 next to work cards that display
+                    // "78/100" - two different scales on one screen.
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          overview.averageRiskScore.toStringAsFixed(1),
+                          style: GoogleFonts.inter(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: RiskBand.fromWire(null,
+                                    score: overview.averageRiskScore.round())
+                                .color,
+                          ),
+                        ),
+                        Text('/100',
+                            style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textTertiary)),
+                      ],
                     ),
                     Text('AVG RISK',
                         style: GoogleFonts.inter(
@@ -373,6 +388,12 @@ class _RiskDistributionCard extends StatelessWidget {
                             letterSpacing: 1,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textTertiary)),
+                    // Which population the average covers. It is computed over
+                    // assessed works only, but sat beside a "2000 works" tile,
+                    // so it read as the average of all of them.
+                    Text('of ${overview.assessedWorks} assessed',
+                        style: GoogleFonts.inter(
+                            fontSize: 9, color: AppColors.textTertiary)),
                   ],
                 ),
               ],
@@ -489,10 +510,12 @@ class _CategoryRiskCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   SizedBox(
-                    width: 68,
+                    width: 72,
                     child: Text(
                       '${c.avgScore.toStringAsFixed(1)} · ${c.count}',
                       textAlign: TextAlign.right,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                           fontSize: 11, fontWeight: FontWeight.w600),
                     ),

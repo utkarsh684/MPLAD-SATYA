@@ -106,8 +106,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         value: data.overview.totalSanctioned.display),
                     _StatRow(
                         label: 'Average risk score',
-                        value: data.overview.averageRiskScore
-                            .toStringAsFixed(1)),
+                        value:
+                            '${data.overview.averageRiskScore.toStringAsFixed(1)}'
+                            '/100  (of ${data.overview.assessedWorks} assessed)'),
                     _StatRow(
                         label: 'Evidence items',
                         value: '${data.overview.totalEvidenceItems}'),
@@ -139,34 +140,60 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600)),
                                     Text(
-                                        '${d.works} works · ${d.totalSanctioned.display}',
+                                        '${d.works} works · '
+                                        '${d.assessedWorks} assessed · '
+                                        '${d.totalSanctioned.display}',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                         style: GoogleFonts.inter(
                                             fontSize: 11,
                                             color: AppColors.textTertiary)),
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: RiskBand.fromWire(null,
-                                          score: d.avgRiskScore.round())
-                                      .color
-                                      .withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  d.avgRiskScore.toStringAsFixed(1),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
+                              // Null average means nothing in this district has
+                              // been assessed. Rendering 0.0 here would colour
+                              // it green and rank it as the safest district.
+                              if (!d.hasAssessments)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.textTertiary
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text('not assessed',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textTertiary)),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
                                     color: RiskBand.fromWire(null,
-                                            score: d.avgRiskScore.round())
-                                        .color,
+                                            score: d.avgRiskScore!.round())
+                                        .color
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  // The denominator travels with the number:
+                                  // a bare "6.8" beside work scores shown as
+                                  // "78/100" reads as a different scale.
+                                  child: Text(
+                                    '${d.avgRiskScore!.toStringAsFixed(1)}/100',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: RiskBand.fromWire(null,
+                                              score: d.avgRiskScore!.round())
+                                          .color,
+                                    ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -209,11 +236,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(width: 12),
+                              // Fixed-width boxes burst as soon as the system
+                              // font scale rises; the text has to be allowed
+                              // to shrink instead of overflow.
                               SizedBox(
-                                width: 56,
+                                width: 62,
                                 child: Text(
                                   'avg +${r.avgPoints.toStringAsFixed(1)}',
                                   textAlign: TextAlign.right,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.inter(
                                       fontSize: 11,
                                       color: AppColors.textTertiary),
