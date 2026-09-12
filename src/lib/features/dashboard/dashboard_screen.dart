@@ -192,36 +192,31 @@ class _MyWorkSection extends StatelessWidget {
             style: GoogleFonts.inter(
                 fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1)),
         const SizedBox(height: 12),
-        Row(
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 2.5,
           children: [
-            Expanded(
-              child: _MiniStat(
-                  label: 'Assigned',
-                  value: '${field.assigned}',
-                  color: AppColors.govBlue),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MiniStat(
-                  label: 'Due today',
-                  value: '${field.dueToday}',
-                  color: AppColors.saffronDark),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MiniStat(
-                  label: 'High risk',
-                  value: '${field.highRisk}',
-                  color: AppColors.riskCritical),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              // Server-side null by design; this is the device's own outbox.
-              child: _MiniStat(
-                  label: 'Pending sync',
-                  value: '$pending',
-                  color: AppColors.textSecondary),
-            ),
+            _MiniStat(
+                label: 'Assigned',
+                value: '${field.assigned}',
+                color: AppColors.govBlue),
+            _MiniStat(
+                label: 'Due today',
+                value: '${field.dueToday}',
+                color: AppColors.saffronDark),
+            _MiniStat(
+                label: 'High risk',
+                value: '${field.highRisk}',
+                color: AppColors.riskCritical),
+            // Server-side null by design; this is the device's own outbox.
+            _MiniStat(
+                label: 'Pending sync',
+                value: '$pending',
+                color: AppColors.textSecondary),
           ],
         ),
       ],
