@@ -400,7 +400,7 @@ uvicorn app.main:app --reload --port 8000
 
 # Test
 pytest tests/ -q
-# 226 passed
+# 228 passed
 ```
 
 ### Demo Logins

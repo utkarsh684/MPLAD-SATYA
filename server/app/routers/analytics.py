@@ -59,7 +59,13 @@ def overview(db: DbSession, user: CurrentUser):
             "yellow": by_band.get("yellow", 0),
             "red": by_band.get("red", 0),
         },
-        "average_risk_score": round(float(avg_score), 1) if avg_score else 0,
+        # None when nothing has been scored yet, never 0. A portfolio with no
+        # assessments is not a portfolio averaging zero risk, and 0 is the one
+        # value a reader would take as "all clear". The client already draws
+        # its distribution over the assessed count rather than total_works;
+        # this keeps the API telling the same truth to anyone else reading it.
+        "average_risk_score": None if avg_score is None else round(float(avg_score), 1),
+        "assessed_works": sum(by_band.values()),
         "total_sanctioned_paise": total_sanctioned,
         "pending_fund_releases": pending_releases,
         "total_evidence_items": total_evidence,
