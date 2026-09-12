@@ -268,7 +268,7 @@ class _OverviewGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 2.2,
+      childAspectRatio: 1.5,
       children: [
         StatCard(
           title: l10n.totalProjects,
@@ -431,6 +431,24 @@ class _CategoryRiskCard extends StatelessWidget {
       subtitle: 'Across works with a current assessment',
       child: Column(
         children: [
+          // Legend header
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                const SizedBox(width: 110),
+                const Spacer(),
+                Text(
+                  'Avg · Count',
+                  textAlign: TextAlign.right,
+                  style: GoogleFonts.inter(
+                      fontSize: 10,
+                      color: AppColors.textTertiary,
+                      letterSpacing: 0.5),
+                ),
+              ],
+            ),
+          ),
           for (final c in top)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -439,7 +457,7 @@ class _CategoryRiskCard extends StatelessWidget {
                   SizedBox(
                     width: 110,
                     child: Text(
-                      c.category,
+                      c.category.split('_').map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}').join(' '),
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(fontSize: 12),
                     ),
@@ -471,7 +489,7 @@ class _CategoryRiskCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   SizedBox(
-                    width: 62,
+                    width: 68,
                     child: Text(
                       '${c.avgScore.toStringAsFixed(1)} · ${c.count}',
                       textAlign: TextAlign.right,
