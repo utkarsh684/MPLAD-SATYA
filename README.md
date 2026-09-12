@@ -712,16 +712,60 @@ within minutes of pointing the seeder at a real Supabase instance:
 
 | Bug | Effect |
 |---|---|
-| `reason_cat_t` never defined `'field'` | 4 of 33 rules — including `MEASUREMENT_MISMATCH`, one of the hero's five reasons — failed to `INSERT` |
+| `reason_cat_t` never defined `'field'` | 4 of 33 rules — including `MEASUREMENT_MISMATCH`, one of the hero's seven scoring reasons — failed to `INSERT` |
 | `Numeric` columns returned `Decimal` while annotated `float` | The facts dict is JSONB; one `Decimal` broke **every** `score_work()` |
-| `WKBElement` bound into raw SQL | psycopg3 cannot adapt it; aborted the whole facts build, so `GEO_DUPLICATE` (18 points on the hero) never fired |
+| `WKBElement` bound into raw SQL | psycopg3 cannot adapt it; aborted the whole facts build, so `GEO_DUPLICATE` (raw weight 18, shown as 13 on the hero once the fraud cap is applied) never fired |
 
-Together they are why the seeder's self-check reported **77, not 78**.
+Together they are why the seeder's self-check refused to reproduce the hero's
+documented score. Each one crashed on contact with Postgres, which is the only
+reason they were found in minutes rather than at a demo.
 
 The lesson is recorded here rather than quietly fixed: a pure-function test
 suite proves the arithmetic, never the persistence. `tests/test_rulebook_schema.py`
 and `tests/test_api_smoke.py` now cover the seams that unit tests structurally
 cannot reach.
+
+### The one that did not announce itself
+
+A fourth bug is worth separating from those three, because they all crashed
+and it did not.
+
+`GEO_DUPLICATE` stopped firing on every work in the database, and every score
+stayed plausible. No exception reached a log. The hero read **77**; the other
+1,999 works were quietly under-scored, and nothing in the system said so.
+
+The chain was four links long, and only the last one is interesting:
+
+1. `_lat_lon()` decoded the stored point to floats with geoalchemy2's `to_shape`
+2. `to_shape` requires Shapely, which was absent from that environment
+3. the resulting `ImportError` was caught by a bare `except Exception`
+4. the caller read the empty result as **"this work has no location"**
+
+A work with no location genuinely has no neighbours to duplicate, so the
+fraud signal disappeared without ever looking like a failure. The scores it
+left behind were the problem: wrong, but reasonable enough that only a fixture
+expecting an exact number caught them.
+
+Two fixes, and the second is the one that matters:
+
+- The geometry never needed to leave the database. Both geo facts now use the
+  work's own location in place — no decode, no Shapely, and no dependency
+  whose absence can subtract a finding.
+- The same shape of default was worse in the evidence pipeline, which fell
+  back to Bhopal's coordinates. A photo could be checked for GPS drift against
+  a location nobody had claimed for that work, manufacturing a distance and a
+  verdict out of a default. An unknown location is now reported as
+  `work_location_unknown` and costs no trust points, because an offset that
+  cannot be measured is not an offset of zero.
+
+`tests/test_provenance_semantics.py` pins both, and asserts that the geo facts
+never reacquire the optional decode.
+
+**A signal that fails loudly costs you a demo. A signal that fails quietly
+costs you the claim**, because every number it produced afterwards was wrong
+in a direction nobody could see. This is the argument for `UNKNOWN` being a
+first-class value throughout SATYA rather than a `None` that some caller
+eventually reads as zero.
 
 ### What would move each of these
 
