@@ -98,6 +98,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'what it did: each reason carries the points it contributed, and '
             'they add up to the score so you can check the arithmetic.',
       ),
+      // Only a field officer has a work queue; for everyone else the section
+      // is never built, and a step anchored to it would open on a card
+      // pointing at nothing. Asking the key whether it is currently laid out
+      // is precisely that question, with no extra state to thread through.
+      if (_queueKey.currentContext != null)
+        TourStep(
+          icon: Icons.assignment_turned_in_outlined,
+          anchor: _queueKey,
+          title: 'What you have been assigned',
+          body: 'Your own verification queue, ordered so the works that most '
+              'need a visit come first. Opening one gives you the checklist '
+              'and the camera; what you record there is what the field source '
+              'contributes to the score.',
+        ),
       TourStep(
         icon: Icons.account_circle_outlined,
         anchor: _profileKey,
