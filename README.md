@@ -687,6 +687,38 @@ cd src && flutter analyze && flutter test
 
 ---
 
+## What the engine does on 2,000 works
+
+Run against the full seeded dataset on Postgres, not in a unit test. The six
+planted cases are excluded so the figure measures the engine on works it was
+not built to catch:
+
+| | Works | Green | Yellow (review) | Red (hold) |
+|---|---|---|---|---|
+| Ordinary, generated at benchmark cost ±20% | 1,994 | 1,969 (98.75%) | 25 (1.25%) | **0** |
+| Planted | 6 | 3 | 2 | 1 |
+
+**Not one of 1,994 synthetic clean works reaches the red band.** The 25 that
+reach yellow are asking for a second look, which is what yellow means; none of
+them is accused of anything.
+
+This is offered instead of a precision figure. Precision against generated
+fraud is circular - the same code writes the fraud and finds it - and a judge
+will say so. What is checkable is the shape above: the engine is quiet on works
+that look normal, and the one work it holds is the one built to be held.
+
+`GEO_DUPLICATE` fires exactly **twice** across all 2,000 works: the planted
+pair, 8.2 m apart, each seeing the other. Zero false positives on the other
+1,998.
+
+The planted anchor is the more interesting row. `MP/2026/1140` carries the same
+geo-duplicate reason as the hero and still scores **18, green** - it has the
+duplicate location but none of the cost, photo or measurement signals. One
+signal does not condemn a work, and the arithmetic shows why rather than
+asserting it.
+
+---
+
 ## Known limitations
 
 Stated plainly, because a limitation a judge discovers is worth far less than
@@ -698,7 +730,7 @@ one you declared first.
 | **Satellite cannot confirm most MPLADS works** | Cartosat resolves ~2.5 m; a ward drain is ~1 m. `inconclusive` is the expected verdict and adds zero points |
 | **Satellite cannot detect change** | Single-date imagery only. Establishing that work happened needs a before/after pair the free WMS does not expose |
 | **`brightness_index` is not a remote-sensing index** | It is a red–green contrast over a rendered visual tile, used only as a weak hint |
-| **No labelled fraud dataset** | Thresholds are expert priors, not learned parameters. Precision/recall against real outcomes is unmeasured |
+| **No labelled fraud dataset** | Thresholds are expert priors, not learned parameters. Precision and recall against real outcomes are unmeasured, and the figures above are specificity on generated data - they say the engine is quiet on normal works, not that it catches real fraud |
 | **Anomaly ≠ fraud** | Terrain, haulage distance, phased works and genuine repeat designs all produce the same signals as misuse |
 | **Citizen reports are unweighted by reputation** | A coordinated group could file matching reports. Mitigated only by cross-source consistency today |
 | **GPS can be spoofed** | Mock-location is detected and flagged into the trust score, but a determined spoof on a rooted device is not fully defeated |
